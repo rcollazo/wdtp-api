@@ -1,0 +1,22 @@
+# WDTP API Project Brief
+
+## Overview
+What Do They Pay? (WDTP) is a GasBuddy-like platform for wage transparency at brick-and-mortar locations. Users can anonymously submit and search hourly wage data for specific locations.
+
+## Tech Stack
+- **Framework**: Laravel 12 with Sail
+- **Database**: External PostgreSQL 17 + PostGIS 3.5
+- **Authentication**: Laravel Sanctum (token-based)
+- **Spatial**: clickbar/laravel-magellan for PostGIS integration
+- **Gamification**: cjmellor/laravel-level-up
+- **Testing**: PHPUnit (not Pest)
+- **API**: /api/v1 prefix, JSON responses
+
+## Database Connection
+```env
+DB_CONNECTION=pgsql
+DB_HOST=10.192.50.3
+DB_PORT=5432
+DB_DATABASE=wdtpdb
+DB_USERNAME=wdtpdb_user
+DB_PASSWORD=kZ6-9uwz6H4XZCL8JkiP%
