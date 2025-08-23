@@ -16,12 +16,12 @@ return new class extends Migration
             $table->enum('role', ['admin', 'moderator', 'contributor', 'viewer'])->default('viewer')->after('username');
             $table->string('phone')->nullable()->after('role');
             $table->date('birthday')->nullable()->after('phone');
-            $table->string('city')->after('birthday');
-            $table->string('state')->after('city');
-            $table->string('country')->after('state');
-            $table->string('zipcode')->after('country');
+            $table->string('city')->nullable()->after('birthday');
+            $table->string('state')->nullable()->after('city');
+            $table->string('country')->nullable()->after('state');
+            $table->string('zipcode')->nullable()->after('country');
             $table->boolean('enabled')->default(false)->after('zipcode');
-            
+
             // Add indexes for location fields
             $table->index('city');
             $table->index('state');
@@ -40,7 +40,7 @@ return new class extends Migration
             $table->dropIndex(['state']);
             $table->dropIndex(['country']);
             $table->dropIndex(['zipcode']);
-            
+
             $table->dropColumn([
                 'username',
                 'role',
@@ -50,7 +50,7 @@ return new class extends Migration
                 'state',
                 'country',
                 'zipcode',
-                'enabled'
+                'enabled',
             ]);
         });
     }

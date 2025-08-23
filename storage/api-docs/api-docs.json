@@ -1,0 +1,820 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "WDTP API",
+        "description": "What Do They Pay? - A wage transparency platform for hourly workers",
+        "contact": {
+            "name": "WDTP API Support",
+            "url": "https://wdtp.app",
+            "email": "support@wdtp.app"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://my-default-host.com",
+            "description": "WDTP API Server"
+        }
+    ],
+    "paths": {
+        "/api/v1": {},
+        "/api/v1/auth/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register a new user account",
+                "description": "Creates a new user account and returns authentication token",
+                "operationId": "48e49e48019e8b141753cb515a26100b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "username",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "User's full name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "description": "User's email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "maxLength": 255,
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "username": {
+                                        "description": "Unique username",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "johndoe"
+                                    },
+                                    "password": {
+                                        "description": "User's password (minimum 8 characters)",
+                                        "type": "string",
+                                        "minLength": 8,
+                                        "example": "password123"
+                                    },
+                                    "password_confirmation": {
+                                        "description": "Password confirmation",
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "phone": {
+                                        "description": "User's phone number (optional)",
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+1-555-123-4567"
+                                    },
+                                    "birthday": {
+                                        "description": "User's birthday (optional)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-15"
+                                    },
+                                    "city": {
+                                        "description": "User's city (optional)",
+                                        "type": "string",
+                                        "maxLength": 100,
+                                        "example": "New York"
+                                    },
+                                    "state": {
+                                        "description": "User's state (optional)",
+                                        "type": "string",
+                                        "maxLength": 100,
+                                        "example": "NY"
+                                    },
+                                    "country": {
+                                        "description": "User's country (optional)",
+                                        "type": "string",
+                                        "maxLength": 100,
+                                        "example": "United States"
+                                    },
+                                    "zipcode": {
+                                        "description": "User's zipcode (optional)",
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "10001"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User registered successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "john.doe@example.com"
+                                                        },
+                                                        "username": {
+                                                            "type": "string",
+                                                            "example": "johndoe"
+                                                        },
+                                                        "role": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "admin",
+                                                                "moderator",
+                                                                "contributor",
+                                                                "viewer"
+                                                            ],
+                                                            "example": "viewer"
+                                                        },
+                                                        "enabled": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "1|abcdef123456789..."
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The email has already been taken."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Authenticate user and get access token",
+                "description": "Validates user credentials and returns authentication token",
+                "operationId": "5db09a35f965c6ca7529ed3c3cae8e21",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "User's email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john.doe@example.com"
+                                    },
+                                    "password": {
+                                        "description": "User's password",
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "device_name": {
+                                        "description": "Device name for token identification (optional)",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "iPhone App"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "john.doe@example.com"
+                                                        },
+                                                        "username": {
+                                                            "type": "string",
+                                                            "example": "johndoe"
+                                                        },
+                                                        "role": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "admin",
+                                                                "moderator",
+                                                                "contributor",
+                                                                "viewer"
+                                                            ],
+                                                            "example": "viewer"
+                                                        },
+                                                        "enabled": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "1|abcdef123456789..."
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Authentication failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The provided credentials are incorrect."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout and revoke access token",
+                "description": "Revokes the current user's authentication token",
+                "operationId": "8f1a443d39c3bf383f851fbb51253c64",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logged out successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get current user profile",
+                "description": "Returns the authenticated user's profile information",
+                "operationId": "1e5f382ba4fa0960d233875cab75a361",
+                "responses": {
+                    "200": {
+                        "description": "User profile retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "user": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "John Doe"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "john.doe@example.com"
+                                                        },
+                                                        "username": {
+                                                            "type": "string",
+                                                            "example": "johndoe"
+                                                        },
+                                                        "role": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "admin",
+                                                                "moderator",
+                                                                "contributor",
+                                                                "viewer"
+                                                            ],
+                                                            "example": "viewer"
+                                                        },
+                                                        "enabled": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "example": "+1-555-123-4567",
+                                                            "nullable": true
+                                                        },
+                                                        "birthday": {
+                                                            "type": "string",
+                                                            "format": "date",
+                                                            "example": "1990-01-15",
+                                                            "nullable": true
+                                                        },
+                                                        "city": {
+                                                            "type": "string",
+                                                            "example": "New York",
+                                                            "nullable": true
+                                                        },
+                                                        "state": {
+                                                            "type": "string",
+                                                            "example": "NY",
+                                                            "nullable": true
+                                                        },
+                                                        "country": {
+                                                            "type": "string",
+                                                            "example": "United States",
+                                                            "nullable": true
+                                                        },
+                                                        "zipcode": {
+                                                            "type": "string",
+                                                            "example": "10001",
+                                                            "nullable": true
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-01-15T10:30:00Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-01-15T10:30:00Z"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/healthz": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Basic health check",
+                "description": "Returns basic API status",
+                "operationId": "5866c56c5e94c9fa6af984def563c23d",
+                "responses": {
+                    "200": {
+                        "description": "API is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "ok"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/healthz/deep": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Deep health check with database connectivity",
+                "description": "Returns API status including database and PostGIS connectivity",
+                "operationId": "e177f377b82d242425dcbc488109210f",
+                "responses": {
+                    "200": {
+                        "description": "API and dependencies are healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "database": {
+                                            "type": "string",
+                                            "example": "connected"
+                                        },
+                                        "postgis": {
+                                            "type": "string",
+                                            "example": "3.5 USE_GEOS=1 USE_PROJ=1 USE_STATS=1"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Health check failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Database connection failed"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "User": {
+                "title": "User",
+                "description": "User model",
+                "properties": {
+                    "id": {
+                        "description": "User ID",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "User's full name",
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "description": "User's email address",
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    },
+                    "username": {
+                        "description": "User's username",
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "role": {
+                        "description": "User role",
+                        "type": "string",
+                        "enum": [
+                            "admin",
+                            "moderator",
+                            "contributor",
+                            "viewer"
+                        ],
+                        "example": "viewer"
+                    },
+                    "enabled": {
+                        "description": "Whether the user account is enabled",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "phone": {
+                        "description": "User's phone number",
+                        "type": "string",
+                        "example": "+1-555-123-4567",
+                        "nullable": true
+                    },
+                    "birthday": {
+                        "description": "User's birthday",
+                        "type": "string",
+                        "format": "date",
+                        "example": "1990-01-15",
+                        "nullable": true
+                    },
+                    "city": {
+                        "description": "User's city",
+                        "type": "string",
+                        "example": "New York",
+                        "nullable": true
+                    },
+                    "state": {
+                        "description": "User's state",
+                        "type": "string",
+                        "example": "NY",
+                        "nullable": true
+                    },
+                    "country": {
+                        "description": "User's country",
+                        "type": "string",
+                        "example": "United States",
+                        "nullable": true
+                    },
+                    "zipcode": {
+                        "description": "User's zipcode",
+                        "type": "string",
+                        "example": "10001",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "description": "Account creation timestamp",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-15T10:30:00Z"
+                    },
+                    "updated_at": {
+                        "description": "Last update timestamp",
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-15T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "UserPublic": {
+                "title": "User (Public)",
+                "description": "User model for public responses (excludes sensitive fields)",
+                "properties": {
+                    "id": {
+                        "description": "User ID",
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "description": "User's full name",
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "description": "User's email address",
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    },
+                    "username": {
+                        "description": "User's username",
+                        "type": "string",
+                        "example": "johndoe"
+                    },
+                    "role": {
+                        "description": "User role",
+                        "type": "string",
+                        "enum": [
+                            "admin",
+                            "moderator",
+                            "contributor",
+                            "viewer"
+                        ],
+                        "example": "viewer"
+                    },
+                    "enabled": {
+                        "description": "Whether the user account is enabled",
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "AuthResponse": {
+                "title": "Authentication Response",
+                "description": "Authentication response with user data and token",
+                "properties": {
+                    "message": {
+                        "description": "Response message",
+                        "type": "string",
+                        "example": "Login successful"
+                    },
+                    "data": {
+                        "properties": {
+                            "user": {
+                                "$ref": "#/components/schemas/UserPublic"
+                            },
+                            "token": {
+                                "description": "Authentication token",
+                                "type": "string",
+                                "example": "1|abcdef123456789..."
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "ValidationError": {
+                "title": "Validation Error",
+                "description": "Standard validation error response",
+                "properties": {
+                    "message": {
+                        "description": "Error message",
+                        "type": "string",
+                        "example": "The given data was invalid."
+                    },
+                    "errors": {
+                        "description": "Field-specific validation errors",
+                        "type": "object",
+                        "example": {
+                            "email": [
+                                "The email has already been taken."
+                            ]
+                        },
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            },
+                            "property": null
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ErrorResponse": {
+                "title": "Error Response",
+                "description": "Standard error response",
+                "properties": {
+                    "message": {
+                        "description": "Error message",
+                        "type": "string",
+                        "example": "Unauthenticated."
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "sanctum": {
+                "type": "apiKey",
+                "description": "Enter token in format: Bearer {token}",
+                "name": "Authorization",
+                "in": "header"
+            },
+            "0": []
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "User authentication and authorization endpoints"
+        },
+        {
+            "name": "Health",
+            "description": "API health check endpoints"
+        }
+    ]
+}

@@ -6,30 +6,34 @@ This guide covers testing practices, patterns, and conventions for the **What Do
 ## Running Existing Tests
 
 ### Current Test Suite Status
-The WDTP project currently has **4 test classes** with **16 passing tests**:
+The WDTP project currently has **6 test classes** with **33 passing tests** and **142 assertions**:
 
 **Unit Tests:**
-- `ExampleTest` - Basic PHPUnit example test
+- `ExampleTest` - Basic PHPUnit example test (1 test)
 - `UserModelTest` - Comprehensive User model testing (12 tests)
 
 **Feature Tests:**
-- `ExampleTest` - Basic Laravel application test
+- `ExampleTest` - Basic Laravel application test (1 test)
 - `HealthCheckTest` - API health check endpoints (2 tests)
+- `AuthenticationTest` - Complete authentication flow testing (13 tests)
+- `AdminSeederTest` - Admin user seeding functionality (4 tests)
 
 ### Running Tests
 
 ```bash
-# Run all tests (16 tests currently)
+# Run all tests (33 tests currently)
 ./vendor/bin/sail test
 
 # Run specific test suite
 ./vendor/bin/sail test --testsuite=Unit      # 13 tests
-./vendor/bin/sail test --testsuite=Feature   # 3 tests
+./vendor/bin/sail test --testsuite=Feature   # 20 tests
 
 # Run specific test class
 ./vendor/bin/sail test --filter=UserModelTest
 ./vendor/bin/sail test tests/Unit/UserModelTest.php
 ./vendor/bin/sail test tests/Feature/HealthCheckTest.php
+./vendor/bin/sail test tests/Feature/AuthenticationTest.php
+./vendor/bin/sail test tests/Feature/AdminSeederTest.php
 
 # Run specific test method
 ./vendor/bin/sail test --filter=test_user_fillable_attributes
@@ -65,8 +69,29 @@ PASS  Tests\Feature\HealthCheckTest
 ✓ basic health check
 ✓ deep health check
 
-Tests:    16 passed (56 assertions)
-Duration: ~1.34s
+PASS  Tests\Feature\AuthenticationTest
+✓ user can register successfully
+✓ user cannot register with invalid data
+✓ user cannot register with duplicate email
+✓ user cannot register with duplicate username
+✓ user can login with valid credentials
+✓ user cannot login with invalid credentials
+✓ user cannot login when disabled
+✓ user can logout successfully
+✓ unauthenticated user cannot logout
+✓ authenticated user can access profile
+✓ unauthenticated user cannot access profile
+✓ complete authentication flow works
+✓ invalid token returns unauthorized
+
+PASS  Tests\Feature\AdminSeederTest
+✓ creates admin user with environment variables
+✓ creates admin user with default credentials
+✓ prevents duplicate admin creation
+✓ creates admin with proper role and enabled status
+
+Tests:    33 passed (142 assertions)
+Duration: ~2.1s
 ```
 
 ## Existing Test Details
@@ -120,6 +145,43 @@ Tests the API health check endpoints:
 - Tests database connectivity
 - Tests PostGIS extension availability
 - Returns JSON with 'database' and 'postgis' status
+
+#### 3. AuthenticationTest (`tests/Feature/AuthenticationTest.php`)
+Comprehensive testing of the authentication system with 13 tests covering:
+
+**Registration Tests:**
+- ✅ Successful user registration with valid data
+- ✅ Registration validation (email/username required, password confirmation)
+- ✅ Duplicate email prevention
+- ✅ Duplicate username prevention
+
+**Login Tests:**
+- ✅ Successful login with valid credentials
+- ✅ Login failure with invalid credentials
+- ✅ Login prevention for disabled users
+
+**Logout Tests:**
+- ✅ Successful token revocation on logout
+- ✅ Unauthorized logout attempt handling
+
+**Profile Access Tests:**
+- ✅ Authenticated user can access profile endpoint
+- ✅ Unauthenticated user cannot access profile
+
+**Integration Tests:**
+- ✅ Complete authentication flow (register → login → profile → logout)
+- ✅ Invalid token handling
+
+#### 4. AdminSeederTest (`tests/Feature/AdminSeederTest.php`)
+Tests the admin user seeding functionality with 4 tests:
+
+**Environment Variable Tests:**
+- ✅ Creates admin user using `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD`
+- ✅ Falls back to default credentials when environment variables not set
+
+**Data Integrity Tests:**
+- ✅ Prevents duplicate admin user creation
+- ✅ Ensures admin has proper role ('admin') and enabled status (true)
 
 ## PHPUnit Configuration
 

@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Seeder Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These values are used by the AdminSeeder to create the initial admin
+    | user for the application. Set these values in your ".env" file.
+    |
+    */
+
+    'seed_admin_email' => env('SEED_ADMIN_EMAIL'),
+    'seed_admin_password' => env('SEED_ADMIN_PASSWORD'),
+
 ];
