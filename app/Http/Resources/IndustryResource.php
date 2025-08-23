@@ -33,7 +33,7 @@ class IndustryResource extends JsonResource
                     'slug' => $crumb->slug,
                 ];
             })->toArray(),
-            'children_count' => $this->children()->defaultFilters()->count(),
+            'children_count' => $this->children_count ?? $this->children()->defaultFilters()->count(),
         ];
     }
 }
