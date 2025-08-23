@@ -29,6 +29,15 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'username' => fake()->unique()->userName(),
+            'role' => fake()->randomElement(['admin', 'moderator', 'contributor', 'viewer']),
+            'phone' => fake()->optional()->phoneNumber(),
+            'birthday' => fake()->optional()->date(),
+            'city' => fake()->city(),
+            'state' => fake()->state(),
+            'country' => fake()->country(),
+            'zipcode' => fake()->postcode(),
+            'enabled' => fake()->boolean(),
         ];
     }
 
@@ -39,6 +48,70 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Create an admin user.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'admin',
+            'enabled' => true,
+        ]);
+    }
+
+    /**
+     * Create a moderator user.
+     */
+    public function moderator(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'moderator',
+            'enabled' => true,
+        ]);
+    }
+
+    /**
+     * Create a contributor user.
+     */
+    public function contributor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'contributor',
+            'enabled' => true,
+        ]);
+    }
+
+    /**
+     * Create a viewer user.
+     */
+    public function viewer(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'viewer',
+            'enabled' => true,
+        ]);
+    }
+
+    /**
+     * Create an enabled user.
+     */
+    public function enabled(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'enabled' => true,
+        ]);
+    }
+
+    /**
+     * Create a disabled user.
+     */
+    public function disabled(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'enabled' => false,
         ]);
     }
 }
