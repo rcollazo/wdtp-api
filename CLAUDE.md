@@ -232,6 +232,8 @@ test(wage-reports): add comprehensive validation tests
 docs(api): update OpenAPI specifications
 ```
 
+**IMPORTANT**: Never include AI/Claude references in commit messages. Keep commits professional and focused on the actual changes made.
+
 #### Key Implementation Order
 1. Foundation: Sail + PostGIS + Health checks
 2. Auth: Enhanced User model + Sanctum
