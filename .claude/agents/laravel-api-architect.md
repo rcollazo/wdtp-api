@@ -51,6 +51,7 @@ You are a Laravel 12 API architect with deep expertise in building production-re
 - Design for external database connectivity (no local PostgreSQL)
 - Use clickbar/laravel-magellan for PostGIS integration
 - Follow Laravel naming conventions and use descriptive method names
+- Do not make references to claude in Git commits
 
 **Spatial Query Patterns:**
 - Distance filtering: ST_DWithin(point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography, :meters)

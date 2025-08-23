@@ -133,15 +133,13 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 
 #### User Roles
 - **viewer**: Default role, can submit wage reports
-- **contributor**: Can create organizations and locations  
+- **contributor**: Can create organizations and locations
 - **moderator**: Can approve/reject wage reports
 - **admin**: Full access, can verify organizations
 
 #### Token Authentication
 - Laravel Sanctum personal access tokens
 - Non-expiring tokens for API access
-- Rate limiting on auth endpoints (5/minute)
-- Rate limiting on submissions (10/minute)
 
 ### Testing Requirements
 
@@ -168,7 +166,7 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 
 #### Required Test Types
 - Feature tests for API endpoints
-- Unit tests for models and services  
+- Unit tests for models and services
 - Spatial query tests with real coordinates
 - Authentication flow tests
 - Gamification system tests
@@ -221,16 +219,6 @@ public function scopeWithDistance($query, $lat, $lon)
 - Same user + location + position within 30 days = duplicate
 - Check before creating new wage reports
 
-#### Rate Limiting
-```php
-// Named limiters
-'submit' => '10,1', // 10 requests per minute for submissions
-'auth' => '5,1',    // 5 requests per minute for auth
-
-// Usage
-Route::middleware('throttle:submit')->group(...)
-```
-
 #### Required Validations
 - Coordinate validation (-90 to 90 lat, -180 to 180 lon)
 - Wage amount: positive decimal with 2 places
@@ -280,7 +268,6 @@ docs(api): update OpenAPI specifications
 #### Data Protection
 - Hide internal fields (review_notes, etc.) from public API responses
 - Validate all geographic inputs to prevent injection
-- Rate limit submissions to prevent spam
 - Audit log all moderation actions
 
 #### File Access Restrictions
@@ -408,7 +395,7 @@ protected function isAccessible(User $user, ?string $path = null): bool
 - Prefer PHPDoc blocks over comments. Never use comments within the code itself unless there is something _very_ complex going on.
 
 ## PHPDoc Blocks
-- Add useful array shape type definitions for arrays when appropriate.
+- Always add useful array shape type definitions for arrays.
 
 ## Enums
 - Typically, keys in an Enum should be TitleCase. For example: `FavoritePerson`, `BestLake`, `Monthly`.

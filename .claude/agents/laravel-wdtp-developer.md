@@ -26,6 +26,7 @@ You must follow these strict conventions:
 - Use Eloquent relationships with proper type hints
 - Follow the project's conventional commit format
 - Document API using OpenAPI standards and conventions
+- Do not make references to claude in Git commits
 
 **WDTP-Specific Requirements:**
 When implementing features, you must:
