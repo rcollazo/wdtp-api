@@ -13,8 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Organization-location relationship with cascade delete behavior
 - Performance counter fields for locations and wage reports counts
 - Organization status and verification status management
+- Organization model with comprehensive relationships, scopes, and route binding
+- Organization observer with domain normalization and cache invalidation
+- Cache version management system for Organizations (`orgs:ver`)
 - Complete database schema documentation in `docs/DATABASE.md`
 - Entity relationships documentation in `docs/ENTITIES.md`
+- Organization model documentation in `docs/MODELS.md`
+- Organizations caching strategy documentation in `docs/CACHING.md`
 
 ### Database Changes
 
