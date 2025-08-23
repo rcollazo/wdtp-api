@@ -145,18 +145,33 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 
 ### Testing Requirements
 
+**📋 For comprehensive testing documentation, see [docs/TESTING.md](docs/TESTING.md)**
+
+#### Current Test Status
+- **16 tests passing** with 56 assertions
+- User model fully tested (12 tests)
+- Health check endpoints tested
+- Database migrations and factories working
+
 #### PHPUnit Standards
-```php
-// Test each feature as implemented
+```bash
+# Test each feature as implemented
 ./vendor/bin/sail test --filter=TestName
 
-// Required test types:
+# Run all tests (currently 16 passing)
+./vendor/bin/sail test
+
+# Run specific test suites
+./vendor/bin/sail test --testsuite=Unit
+./vendor/bin/sail test --testsuite=Feature
+```
+
+#### Required Test Types
 - Feature tests for API endpoints
 - Unit tests for models and services  
 - Spatial query tests with real coordinates
 - Authentication flow tests
 - Gamification system tests
-```
 
 #### Test Data Patterns
 ```php
