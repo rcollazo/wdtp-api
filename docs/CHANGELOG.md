@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Entity relationships documentation in `docs/ENTITIES.md`
 - Organization model documentation in `docs/MODELS.md`
 - Organizations caching strategy documentation in `docs/CACHING.md`
+- Organization API resources with inheritance pattern (OrganizationResource/OrganizationListItemResource)
+- API Resources documentation in `docs/API_RESOURCES.md` with field mappings and usage patterns
 
 ### Database Changes
 
