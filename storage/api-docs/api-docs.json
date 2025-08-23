@@ -22,6 +22,210 @@
     ],
     "paths": {
         "/api/v1": {},
+        "/api/v1/industries": {
+            "get": {
+                "tags": [
+                    "Industries"
+                ],
+                "summary": "List industries",
+                "description": "Get industries as nested tree or flat paginated list with optional search",
+                "operationId": "74cd47647748f296d06d79315617c2e1",
+                "parameters": [
+                    {
+                        "name": "tree",
+                        "in": "query",
+                        "description": "Return nested tree structure instead of flat list",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search term for industry name or slug (case-insensitive)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "example": "restaurant"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page for flat list (ignored for tree view)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Industries retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "oneOf": [
+                                                    {
+                                                        "$ref": "#/components/schemas/Industry"
+                                                    },
+                                                    {
+                                                        "$ref": "#/components/schemas/IndustryNode"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "links": {
+                                            "description": "Pagination links (only for flat list)",
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "description": "Pagination metadata (only for flat list)",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/v1/industries/autocomplete": {
+            "get": {
+                "tags": [
+                    "Industries"
+                ],
+                "summary": "Industry autocomplete search",
+                "description": "Fast search for industries with minimal response payload",
+                "operationId": "004064da9d311574a3aa90d3e26b832f",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search term (minimum 2 characters)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "example": "food"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of results",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 50,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Autocomplete results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 2
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Fast Food Restaurant"
+                                            },
+                                            "slug": {
+                                                "type": "string",
+                                                "example": "fast-food-restaurant"
+                                            },
+                                            "breadcrumbs_text": {
+                                                "type": "string",
+                                                "example": "Restaurants > Fast Food Restaurant"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error - missing or invalid parameters"
+                    }
+                }
+            }
+        },
+        "/api/v1/industries/{idOrSlug}": {
+            "get": {
+                "tags": [
+                    "Industries"
+                ],
+                "summary": "Get single industry",
+                "description": "Retrieve a specific industry by ID or slug with relationships",
+                "operationId": "5df7234ba92a76c69e4a63b56a60a7a2",
+                "parameters": [
+                    {
+                        "name": "idOrSlug",
+                        "in": "path",
+                        "description": "Industry ID (integer) or slug (string)",
+                        "required": true,
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                {
+                                    "type": "string",
+                                    "example": "fast-food-restaurant"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Industry retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Industry"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Industry not found"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/register": {
             "post": {
                 "tags": [
@@ -594,6 +798,93 @@
     },
     "components": {
         "schemas": {
+            "Industry": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120,
+                        "example": "Fast Food Restaurant"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "fast-food-restaurant"
+                    },
+                    "depth": {
+                        "type": "integer",
+                        "maximum": 6,
+                        "minimum": 0,
+                        "example": 1
+                    },
+                    "sort": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "parent": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Restaurants"
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "restaurants"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "breadcrumbs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Breadcrumb"
+                        }
+                    },
+                    "children_count": {
+                        "type": "integer",
+                        "example": 3
+                    }
+                },
+                "type": "object"
+            },
+            "IndustryNode": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/Industry"
+                    },
+                    {
+                        "properties": {
+                            "children": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#/components/schemas/IndustryNode"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                ]
+            },
+            "Breadcrumb": {
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Restaurants"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "restaurants"
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "title": "User",
                 "description": "User model",
@@ -815,6 +1106,10 @@
         {
             "name": "Health",
             "description": "API health check endpoints"
+        },
+        {
+            "name": "Industries",
+            "description": "Industries"
         }
     ]
 }
