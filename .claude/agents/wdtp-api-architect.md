@@ -1,5 +1,5 @@
 ---
-name: laravel-architect
+name: wdtp-api-architect
 description: Use this agent when you need to design or architect Laravel 12 API systems, especially those involving spatial data, authentication, or complex business logic. This agent excels at creating production-ready API designs with proper database architecture, authentication flows, and testing strategies. Examples: <example>Context: User needs to design a new API endpoint for location-based wage reporting with spatial search capabilities. user: "I need to create an API endpoint that allows users to search for wage reports within a 5km radius of their location" assistant: "I'll use the laravel-api-architect agent to design a comprehensive spatial search API with proper PostGIS integration, authentication, and testing strategy."</example> <example>Context: User is planning a new feature that involves user roles, moderation workflows, and gamification elements. user: "We need to add a review system where users can rate locations, but reviews need moderation and should award points" assistant: "Let me engage the laravel-api-architect agent to design the complete system architecture including the moderation workflow, RBAC implementation, and gamification integration."</example>
 model: sonnet
 color: purple
