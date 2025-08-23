@@ -22,5 +22,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Industry::observe(IndustryObserver::class);
+
+        // Initialize organizations cache version
+        \Illuminate\Support\Facades\Cache::add('orgs:ver', 1, 0);
     }
 }
