@@ -16,7 +16,7 @@ customModes:
     customInstructions: >-
       - Always use geography(Point,4326) with GiST indexes for spatial data
       - Follow Laravel 12 conventions and best practices
-      - Design for external PostgreSQL 15 + PostGIS 3.4 
+      - Design for external PostgreSQL 17 + PostGIS 3.5
       - Plan for PHPUnit testing from the start
       - Consider gamification and moderation workflows in all designs
       - Use conventional commits and keep changes idempotent
@@ -24,6 +24,7 @@ customModes:
       - read
       - edit
       - browser
+      - command
 
   - slug: wdtp-coder
     name: 💻 WDTP Developer
@@ -49,6 +50,7 @@ customModes:
       - read
       - edit
       - command
+      - browser
 
   - slug: wdtp-tester
     name: 🧪 WDTP Test Engineer  
@@ -74,6 +76,7 @@ customModes:
         - fileRegex: ".*Test\\.php$|.*Factory\\.php$|.*Seeder\\.php$"
           description: "Test files, factories, and seeders only"
       - command
+      - browser
 
   - slug: wdtp-spatial
     name: 🗺️ PostGIS Specialist
@@ -98,3 +101,5 @@ customModes:
         - fileRegex: ".*Migration.*\\.php$|.*Model\\.php$|.*Controller\\.php$|.*Test\\.php$"
           description: "Migrations, models, controllers, and tests"
       - command
+      - browser
+      
