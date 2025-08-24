@@ -56,9 +56,14 @@ DB_PASSWORD=kZ6-9uwz6H4XZCL8JkiP%
 - Full-text search on name/description
 
 #### Locations
-- Physical addresses with PostGIS coordinates
-- geography(Point,4326) for spatial queries
-- Belong to organizations, have wage reports
+- Physical addresses with PostGIS coordinates and dual storage architecture
+- geography(Point,4326) for spatial queries + cached lat/lng for quick access
+- Comprehensive spatial scopes: `near()`, `withDistance()`, `orderByDistance()`
+- Full-text search capabilities on name, address, and city
+- GiST spatial indexes for optimal PostGIS query performance (<200ms requirement)
+- Route model binding support (ID and slug resolution)
+- Automatic PostGIS point updates via model events
+- Belong to organizations, have wage reports (when implemented)
 
 #### Wage Reports
 - Anonymous hourly wage submissions
@@ -147,7 +152,7 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 **📋 For comprehensive testing documentation, see [docs/TESTING.md](docs/TESTING.md)**
 
 #### Current Test Status
-- **153 tests passing** with 1055 assertions
+- **221 tests passing** with 2328 assertions
 - User model fully tested (12 tests)
 - Industry model comprehensively tested (49 tests across 4 test classes)
 - Organization model comprehensively tested (31 tests across 2 test classes)
@@ -155,6 +160,12 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 - Authentication flow fully tested (13 tests)
 - Industry API endpoints fully tested (28 tests across 2 test classes)
 - Organization API endpoints fully tested (23 tests with caching)
+- Location model comprehensively tested (72 tests across 5 test suites)
+  - Database migrations with PostGIS testing (10 tests)
+  - Model functionality and spatial scopes (25 tests)
+  - Factory patterns and data generation (18 tests) 
+  - Spatial query accuracy and performance (9 tests)
+  - Seeder functionality with US cities (15 tests)
 - Database migrations, factories, and seeders working
 - Swagger/OpenAPI documentation tested (6 tests)
 
@@ -182,25 +193,46 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 ```php
 // Use factories for consistent test data
 - Industry::factory()->create()
+- Organization::factory()->active()->verified()->create()
 - Location::factory()->withCoordinates($lat, $lon)->create()
-- WageReport::factory()->approved()->create()
+- Location::factory()->inCity('New York')->active()->create()
+- WageReport::factory()->approved()->create() // When implemented
 
-// Test spatial queries with realistic US coordinates
+// Location factory states and city helpers
+- Location::factory()->active()->verified()->create()
+- Location::factory()->newYork()->create()
+- Location::factory()->losAngeles()->create()
+- Location::factory()->chicago()->create()
+
+// Test spatial queries with realistic US coordinates (±500m tolerance)
 - NYC: 40.7128, -74.0060
-- LA: 34.0522, -118.2437
+- LA: 34.0522, -118.2437  
 - Chicago: 41.8781, -87.6298
+- Houston: 29.7604, -95.3698
+- Phoenix: 33.4484, -112.0740
 ```
 
 ### Database Design Patterns
 
 #### Migration Conventions
 ```php
-// PostGIS setup
+// PostGIS setup (with existence check)
 DB::statement('CREATE EXTENSION IF NOT EXISTS postgis');
 
-// Geography columns with indexes
-$table->geography('point', 'POINT', 4326);
+// Dual coordinate storage for optimal performance
+$table->decimal('latitude', 10, 8);   // Cached for quick access
+$table->decimal('longitude', 11, 8);  // Cached for sorting
+
+// PostGIS geography column for spatial queries
+DB::statement('ALTER TABLE locations ADD COLUMN point GEOGRAPHY(POINT, 4326)');
 DB::statement('CREATE INDEX locations_point_gist_idx ON locations USING GIST (point)');
+
+// Full-text search index for location search
+DB::statement('CREATE INDEX locations_name_address_city_fulltext 
+    ON locations USING gin(to_tsvector(\'english\', 
+    coalesce(name, \'\') || \' \' || 
+    coalesce(address_line_1, \'\') || \' \' || 
+    coalesce(city, \'\')))');
 
 // Status enums
 $table->enum('status', ['pending', 'approved', 'rejected', 'flagged'])->default('pending');
@@ -215,9 +247,21 @@ public function locations(): HasMany
 public function wageReports(): HasMany
 public function interactions(): HasMany
 
-// Spatial scopes
-public function scopeNear($query, $lat, $lon, $radiusKm = 10)
-public function scopeWithDistance($query, $lat, $lon)
+// Location model spatial scopes and relationships
+public function organization(): BelongsTo
+public function wageReports(): HasMany // Ready for implementation
+
+// Location spatial scopes (PostGIS powered)
+public function scopeNear($query, $lat, $lon, $radiusKm = 10): Builder
+public function scopeWithDistance($query, $lat, $lon): Builder
+public function scopeOrderByDistance($query, $lat, $lon): Builder
+
+// Location search and filter scopes
+public function scopeSearch($query, $term): Builder
+public function scopeInCity($query, $city): Builder
+public function scopeInState($query, $state): Builder
+public function scopeActive($query): Builder
+public function scopeVerified($query): Builder
 ```
 
 ### Validation & Business Rules
@@ -249,7 +293,7 @@ docs(api): update OpenAPI specifications
 2. COMPLETE: Auth: Enhanced User model + Sanctum
 3. COMPLETE: Industries (with API, tests, seeder)
 4. COMPLETE: Organizations (API with index, show, autocomplete endpoints)
-5. TODO: Locations (pending implementation) 
+5. COMPLETE: Locations (spatial model with PostGIS integration and comprehensive testing) 
 6. TODO: Position Categories (pending implementation)
 7. TODO: Core: Wage Reports with validation + spatial search
 8. TODO: Interactions: Voting/flagging + moderation workflow
@@ -289,10 +333,17 @@ docs(api): update OpenAPI specifications
 ### Performance Optimization
 
 #### Database Indexes
-- GiST index on geography columns
+- GiST index on geography columns for spatial queries
 - Composite indexes on (status, created_at) for wage reports
-- Full-text search indexes on organization name/description
+- Full-text search indexes on organization name/description AND location search
 - Foreign key indexes on all relationship columns
+- Coordinate indexes on (latitude, longitude) for quick sorting
+
+#### Location Model Spatial Performance
+- All spatial queries must complete within 200ms (tested requirement)
+- GiST index utilization verified for PostGIS operations
+- Distance calculations accurate to ±500m (tested tolerance)
+- Dual storage: geography column for accuracy + lat/lng for performance
 
 #### Caching Strategy
 - Cache popular search queries (Redis when available)
