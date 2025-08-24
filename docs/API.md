@@ -554,6 +554,176 @@ const fullOrganization = await fetch(`/api/v1/organizations/${selectedSlug}`)
 
 ---
 
+## Complete API Integration Patterns
+
+This section demonstrates how to integrate all Organization endpoints in a typical frontend application workflow.
+
+### Progressive Enhancement Workflow
+
+The Organizations API is designed for progressive enhancement, allowing efficient user interactions from quick search to detailed views:
+
+```javascript
+// 1. Start with autocomplete for instant feedback
+async function searchOrganizations(term) {
+    if (term.length < 2) return [];
+    
+    const response = await fetch(`/api/v1/organizations/autocomplete?q=${term}&limit=5`);
+    return response.json();
+}
+
+// 2. Show filtered list with pagination for browsing
+async function browseOrganizations(filters = {}) {
+    const params = new URLSearchParams({
+        per_page: 25,
+        sort: 'locations',
+        ...filters
+    });
+    
+    const response = await fetch(`/api/v1/organizations?${params}`);
+    return response.json();
+}
+
+// 3. Get full details when user selects organization
+async function getOrganizationDetails(idOrSlug) {
+    const response = await fetch(`/api/v1/organizations/${idOrSlug}`);
+    return response.json();
+}
+```
+
+### Typical Integration Scenarios
+
+**Scenario 1: Search-First Interface**
+```javascript
+// User types "starb" in search box
+const suggestions = await searchOrganizations('starb');
+// Returns: [{"id": 1, "name": "Starbucks", "slug": "starbucks"}]
+
+// User clicks suggestion, get full details
+const organization = await getOrganizationDetails('starbucks');
+// Returns complete organization data with verification status, industry info, etc.
+```
+
+**Scenario 2: Industry-Based Browsing**
+```javascript
+// User browses coffee shops in a specific industry
+const coffeeShops = await browseOrganizations({
+    industry_slug: 'coffee-shop',
+    verified: true,
+    sort: 'wage_reports'
+});
+
+// Returns paginated list with location counts and wage report counts
+// User can then drill down to specific organizations
+```
+
+**Scenario 3: Location-Aware Search**
+```javascript
+// Future: will include spatial queries
+const nearbyOrganizations = await browseOrganizations({
+    q: 'restaurant',
+    has_locations: true,
+    near: '40.7128,-74.0060',  // Future implementation
+    radius_km: 5               // Future implementation
+});
+```
+
+### Performance Integration Strategy
+
+**Caching Optimization:**
+- **Autocomplete**: 600-second cache provides stability during typing sessions
+- **Index/Show**: 300-second cache balances freshness with performance  
+- **Progressive Loading**: Start with autocomplete, upgrade to full data as needed
+
+**Response Size Management:**
+```javascript
+// Minimal payload for autocomplete (3 fields only)
+const autocompleteSize = '~50 bytes per result';
+
+// Optimized list items for browsing (7-8 key fields)  
+const listItemSize = '~200 bytes per result';
+
+// Complete data for detail views (all fields)
+const fullDetailSize = '~500 bytes per result';
+```
+
+**Client-Side Optimization:**
+```javascript
+// Cache autocomplete results to reduce API calls
+const autocompleteCache = new Map();
+
+async function cachedAutocomplete(term) {
+    if (autocompleteCache.has(term)) {
+        return autocompleteCache.get(term);
+    }
+    
+    const results = await searchOrganizations(term);
+    autocompleteCache.set(term, results);
+    
+    // Expire cache after 5 minutes to match server TTL
+    setTimeout(() => autocompleteCache.delete(term), 300000);
+    
+    return results;
+}
+```
+
+### Error Handling Integration
+
+**Comprehensive Error Handling:**
+```javascript
+async function handleOrganizationRequest(apiCall) {
+    try {
+        const response = await apiCall();
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new OrganizationApiError(error.message, response.status, error.errors);
+        }
+        
+        return response.json();
+    } catch (error) {
+        if (error instanceof OrganizationApiError) {
+            // Handle validation errors, show specific field errors
+            displayValidationErrors(error.errors);
+        } else if (error.status === 404) {
+            // Organization not found, redirect to search
+            redirectToSearch();
+        } else {
+            // Network or server error
+            displayGenericError();
+        }
+        throw error;
+    }
+}
+
+class OrganizationApiError extends Error {
+    constructor(message, status, errors = null) {
+        super(message);
+        this.status = status;
+        this.errors = errors;
+    }
+}
+```
+
+### Complete API Integration Summary
+
+**Endpoint Relationships:**
+1. **Autocomplete** → **Index**: User types, gets suggestions, browses filtered results
+2. **Index** → **Show**: User browses list, clicks for full organization details  
+3. **Show** → **Related Data**: Full view can link to locations, wage reports (future)
+
+**Data Flow Optimization:**
+- **Autocomplete**: Instant feedback with 600s cache for typing consistency
+- **Index**: Comprehensive search/filter with 300s cache and pagination
+- **Show**: Complete data with 300s cache and eager-loaded relationships
+
+**Performance Characteristics:**
+- **Autocomplete**: < 100ms response time for optimal UX
+- **Index**: < 200ms for paginated results with filtering
+- **Show**: < 150ms for single organization with relationships
+- **Cache Hit Rate**: > 80% in typical usage patterns
+
+---
+
 ## Rate Limiting
 
 All API endpoints are subject to rate limiting:

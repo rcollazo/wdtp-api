@@ -5,9 +5,11 @@ Complete route definitions and patterns for the WDTP API endpoints.
 ## Table of Contents
 
 - [Route Structure](#route-structure)
+- [Master Route Table](#master-route-table)
 - [Industries Routes](#industries-routes)
 - [Organizations Routes](#organizations-routes)
 - [Authentication Routes](#authentication-routes)
+- [Health Check Routes](#health-check-routes)
 - [Route Patterns](#route-patterns)
 
 ---
@@ -24,21 +26,48 @@ All API routes use the `/api/v1` prefix and follow RESTful conventions where app
 
 ### Route Registration
 
-Routes are registered in `/routes/api.php` using Laravel's route groups:
+Routes are registered in `/routes/api.php` using explicit route definitions for maximum control:
 
 ```php
 Route::prefix('v1')->group(function () {
-    // Authentication routes (no prefix)
-    Route::prefix('auth')->group(base_path('routes/auth.php'));
-    
-    // Resource routes with versioning
-    Route::apiResource('industries', IndustryController::class)
-        ->parameter('industries', 'idOrSlug');
-        
-    Route::apiResource('organizations', OrganizationController::class)
-        ->parameter('organizations', 'idOrSlug')
-        ->only(['index', 'show']);
+    Route::get('/healthz', [HealthCheckController::class, 'basic']);
+    Route::get('/healthz/deep', [HealthCheckController::class, 'deep']);
+
+    // Authentication routes
+    Route::prefix('auth')->group(function () {
+        Route::post('/register', [AuthController::class, 'register']);
+        Route::post('/login', [AuthController::class, 'login']);
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::post('/logout', [AuthController::class, 'logout']);
+            Route::get('/me', [AuthController::class, 'me']);
+        });
+    });
+
+    // Industries endpoints
+    Route::get('industries', [IndustryController::class, 'index']);
+    Route::get('industries/autocomplete', [IndustryController::class, 'autocomplete']);
+    Route::get('industries/{idOrSlug}', [IndustryController::class, 'show']);
+
+    // Organizations endpoints
+    Route::get('organizations', [OrganizationController::class, 'index']);
+    Route::get('organizations/autocomplete', [OrganizationController::class, 'autocomplete']);
+    Route::get('organizations/{idOrSlug}', [OrganizationController::class, 'show']);
 });
+```
+
+### Route Order Importance
+
+**Critical Route Ordering:**
+The autocomplete routes MUST be registered before the `{idOrSlug}` routes to prevent conflicts:
+
+```php
+// ✅ CORRECT: Specific routes first
+Route::get('organizations/autocomplete', [OrganizationController::class, 'autocomplete']);
+Route::get('organizations/{idOrSlug}', [OrganizationController::class, 'show']);
+
+// ❌ INCORRECT: Would match 'autocomplete' as an idOrSlug parameter  
+Route::get('organizations/{idOrSlug}', [OrganizationController::class, 'show']);
+Route::get('organizations/autocomplete', [OrganizationController::class, 'autocomplete']);
 ```
 
 ---
@@ -113,6 +142,12 @@ GET /api/v1/industries/autocomplete?q=rest
       $query->where('slug', $idOrSlug);
   }
   ```
+
+### Rate Limiting
+Organization routes have **no additional rate limiting** beyond the standard API throttling:
+- Follow default Laravel API rate limits (60 requests/minute for authenticated users)
+- No custom throttling middleware applied to organization endpoints
+- Cache-first strategy reduces database load and improves performance
 
 ### Query Parameters
 

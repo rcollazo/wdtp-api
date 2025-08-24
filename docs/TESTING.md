@@ -6,7 +6,7 @@ This guide covers testing practices, patterns, and conventions for the **What Do
 ## Running Existing Tests
 
 ### Current Test Suite Status
-The WDTP project currently has **12 test classes** with **122 passing tests** and **914 assertions**:
+The WDTP project currently has **15 test classes** with **153 passing tests** and **1055 assertions**:
 
 **Unit Tests:**
 - `ExampleTest` - Basic PHPUnit example test (1 test)
@@ -14,6 +14,7 @@ The WDTP project currently has **12 test classes** with **122 passing tests** an
 - `IndustryObserverTest` - Industry model observer and lifecycle testing (14 tests) 
 - `IndustryResourceTest` - API resource transformation testing (9 tests)
 - `IndustryTest` - Industry model functionality testing (10 tests)
+- `OrganizationResourceTest` - Organization API resource testing (8 tests)
 - `UserModelTest` - Comprehensive User model testing (12 tests)
 
 **Feature Tests:**
@@ -24,17 +25,18 @@ The WDTP project currently has **12 test classes** with **122 passing tests** an
 - `IndustryApiTest` - Industries API endpoints comprehensive testing (15 tests)
 - `IndustryEdgeCasesTest` - Edge cases and error handling for industries (13 tests)
 - `IndustrySeederTest` - Industry taxonomy seeding functionality (6 tests)
+- `OrganizationApiTest` - Organizations API endpoints comprehensive testing (23 tests)
 - `SwaggerDocumentationTest` - API documentation and OpenAPI testing (6 tests)
 
 ### Running Tests
 
 ```bash
-# Run all tests (122 tests currently)
+# Run all tests (153 tests currently)
 ./vendor/bin/sail test
 
 # Run specific test suite
-./vendor/bin/sail test --testsuite=Unit      # 62 tests
-./vendor/bin/sail test --testsuite=Feature   # 60 tests
+./vendor/bin/sail test --testsuite=Unit      # 70 tests
+./vendor/bin/sail test --testsuite=Feature   # 83 tests
 
 # Run specific test class
 ./vendor/bin/sail test --filter=UserModelTest
@@ -98,8 +100,8 @@ PASS  Tests\Feature\AdminSeederTest
 ✓ prevents duplicate admin creation
 ✓ creates admin with proper role and enabled status
 
-Tests:    122 passed (914 assertions)
-Duration: ~11.9s
+Tests:    153 passed (1055 assertions)
+Duration: ~14.7s
 ```
 
 ## Existing Test Details
@@ -190,6 +192,54 @@ Tests the admin user seeding functionality with 4 tests:
 **Data Integrity Tests:**
 - ✅ Prevents duplicate admin user creation
 - ✅ Ensures admin has proper role ('admin') and enabled status (true)
+
+#### 5. OrganizationApiTest (`tests/Feature/OrganizationApiTest.php`)
+Comprehensive testing of the Organizations API endpoints with 23 tests covering:
+
+**Index Endpoint Tests:**
+- ✅ Returns paginated organizations list with proper structure
+- ✅ Applies default filters (active, visible, approved status)
+- ✅ Search functionality across name, legal_name, and domain fields
+- ✅ Industry filtering by ID and slug (mutually exclusive)
+- ✅ Verification status filtering with boolean conversion
+- ✅ Location presence filtering (has_locations parameter)
+- ✅ Multiple sort options: name, locations, wage_reports, relevance
+- ✅ Pagination parameters and limits validation
+- ✅ Query parameter validation and error responses
+
+**Show Endpoint Tests:**
+- ✅ Returns organization by numeric ID
+- ✅ Returns organization by slug with case-sensitive matching
+- ✅ Includes primary industry relationship with eager loading
+- ✅ Applies default filters for access control
+- ✅ Returns 404 for non-existent organizations
+
+**Caching System Tests:**
+- ✅ Index endpoint caching with parameter-based cache keys
+- ✅ Show endpoint caching with ID/slug-based cache keys
+- ✅ Cache key slug resolution and consistency
+- ✅ Cache version system with automatic invalidation
+
+**Performance and Integration:**
+- All tests use factories for consistent data setup
+- Cache behavior verified with multiple requests
+- Eager loading tested to prevent N+1 queries
+- Response format validation for API resources
+- Default filter behavior across all endpoints
+
+### Additional Test Classes
+
+#### 6. OrganizationResourceTest (`tests/Unit/OrganizationResourceTest.php`)
+Unit tests for API resource transformations with 8 tests:
+
+- ✅ OrganizationListItemResource minimal field format
+- ✅ Verification status boolean conversion
+- ✅ Primary industry relationship inclusion/exclusion
+- ✅ Null relationship handling
+- ✅ OrganizationResource inheritance from list item resource
+- ✅ DateTime formatting for ISO 8601 timestamps
+- ✅ Optional field handling (verified_at)
+- ✅ Resource collection behavior
 
 ## PHPUnit Configuration
 
