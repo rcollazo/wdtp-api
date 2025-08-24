@@ -98,6 +98,7 @@ GET /api/v1/industries/autocomplete?q=rest
 | Method | Path | Controller@Action | Name |
 |--------|------|-------------------|------|
 | `GET` | `/api/v1/organizations` | `OrganizationController@index` | `organizations.index` |
+| `GET` | `/api/v1/organizations/autocomplete` | `OrganizationController@autocomplete` | `organizations.autocomplete` |
 | `GET` | `/api/v1/organizations/{idOrSlug}` | `OrganizationController@show` | `organizations.show` |
 
 ### Route Parameters
@@ -131,6 +132,10 @@ GET /api/v1/industries/autocomplete?q=rest
 - `wage_reports`: By wage report count (descending)
 - `updated`: By last update time (descending)
 
+**Autocomplete Endpoint (`/api/v1/organizations/autocomplete`):**
+- `q` (required, string, min:2): Search term for organization name
+- `limit` (integer, 1-50, default:10): Maximum number of results
+
 ### Example Routes
 
 ```bash
@@ -157,6 +162,12 @@ GET /api/v1/organizations/starbucks
 
 # Complex filtering example
 GET /api/v1/organizations?q=coffee&industry_id=5&verified=true&sort=wage_reports&per_page=20
+
+# Autocomplete search
+GET /api/v1/organizations/autocomplete?q=starb
+
+# Autocomplete with limit
+GET /api/v1/organizations/autocomplete?q=coffee&limit=5
 ```
 
 ---

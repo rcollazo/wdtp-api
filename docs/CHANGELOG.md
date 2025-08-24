@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Organizations API endpoints (index and show) with comprehensive search, filtering, and sorting
 - Organizations controller with versioned caching, parameter validation, and error handling
 - Complete API documentation in `docs/API.md` with endpoint specifications and examples
+- Organizations autocomplete endpoint with performance optimization and extended caching
 
 ### API Endpoints
 
@@ -44,6 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Includes primary industry relationship data
 - Cached responses with 300s TTL per organization
 - Uses defaultFilters() scope for consistent access control
+
+**GET /api/v1/organizations/autocomplete**
+- Fast autocomplete endpoint optimized for typeahead interfaces  
+- Minimal response format with only id, name, and slug fields
+- Extended cache TTL (600s) for UI consistency during typing sessions
+- Query optimization with field selection and result limiting
+- Supports search term (min 2 chars) and result limit (1-50, default 10)
 
 **Query Parameter Support:**
 - `q`: Search term (min 2 characters)

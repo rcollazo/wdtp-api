@@ -74,6 +74,9 @@ The organizations system uses structured cache keys that include the cache versi
 "orgs:1:show:starbucks" => [/* single organization by slug */]
 "orgs:1:show:42" => [/* single organization by ID */]
 
+"orgs:{version}:ac:{hash}" => $autocompleteResults
+"orgs:1:ac:a1b2c3d4" => [/* autocomplete results for specific query */]
+
 // Future cache patterns (planned)
 "orgs:search:{$term}:v{$version}" => $results
 "orgs:search:starbucks:v1" => [/* search results */]
@@ -143,6 +146,30 @@ private function getCacheVersion(): int
     return Cache::get('orgs:ver', 1);
 }
 ```
+
+**Autocomplete Endpoint Caching:**
+```php
+// OrganizationController@autocomplete
+$cacheParams = ['q' => $query, 'limit' => $limit];
+$cacheKey = 'orgs:'.$this->getCacheVersion().':ac:'.md5(json_encode($cacheParams));
+
+$results = Cache::remember($cacheKey, 600, function () use ($query, $limit) {
+    return Organization::query()
+        ->defaultFilters()
+        ->search($query)
+        ->select(['id', 'name', 'slug'])  // Minimal fields for performance
+        ->limit($limit)
+        ->get()
+        ->toArray();
+});
+```
+
+**Extended TTL for Autocomplete:**
+The autocomplete endpoint uses an extended 600-second TTL (vs 300s for other endpoints) because:
+- Autocomplete data changes less frequently than detailed organization data
+- UI interactions require consistent results during typing sessions  
+- Extended caching reduces database load for high-frequency autocomplete queries
+- Minimal response format reduces cache memory usage despite longer TTL
 
 #### Search Result Caching
 ```php
@@ -324,6 +351,9 @@ $searchResults = Cache::remember($key, 1800, $callback);  // 30 minutes
 
 // Medium volatility - medium TTL  
 $industryOrgs = Cache::remember($key, 7200, $callback);   // 2 hours
+
+// Autocomplete data - extended TTL for UI consistency
+$autocompleteResults = Cache::remember($key, 3600, $callback); // 1 hour
 
 // Low volatility - long TTL
 $statistics = Cache::remember($key, 14400, $callback);    // 4 hours

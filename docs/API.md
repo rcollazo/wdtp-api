@@ -109,8 +109,18 @@ Accept: application/json
 
 ### Caching
 - All read endpoints cached with version-based invalidation
-- Cache TTL: 300 seconds (5 minutes)
+- Standard Cache TTL: 300 seconds (5 minutes)
+- Autocomplete Cache TTL: 600 seconds (10 minutes) for UI consistency
 - Cache automatically invalidated when data changes
+
+### Performance Optimizations
+
+**Autocomplete Endpoint:**
+- Minimal response format (id, name, slug only) reduces payload size
+- Extended cache TTL (600s) provides consistent results during typing sessions
+- Query field selection (`select(['id', 'name', 'slug'])`) minimizes database load
+- Result limiting (max 50) prevents excessive memory usage
+- Sub-100ms response times for optimal UI interaction
 
 ---
 
@@ -395,6 +405,78 @@ The following internal fields are excluded from API responses:
 - `verification_status` (raw enum value, use `is_verified` boolean)
 - `review_notes` (internal moderation notes)
 - `created_by`, `verified_by` (internal user references)
+
+### Organization Autocomplete
+
+**Endpoint:** `GET /api/v1/organizations/autocomplete`
+
+**Description:** Fast autocomplete endpoint for organization search with minimal response format optimized for typeahead interfaces.
+
+**Query Parameters:**
+- `q` (required, string, min: 2): Search term for organization name
+- `limit` (optional, integer, 1-50, default: 10): Maximum number of results
+
+**Cache Key:** `orgs:{version}:ac:{hash}`  
+**Cache TTL:** 600 seconds (extended for autocomplete data stability)
+
+**Example Request:**
+```http
+GET /api/v1/organizations/autocomplete?q=starb&limit=5
+```
+
+**Example Response (Minimal Format):**
+```json
+[
+  {
+    "id": 1,
+    "name": "Starbucks",
+    "slug": "starbucks"
+  },
+  {
+    "id": 15,
+    "name": "Starbucks Reserve",
+    "slug": "starbucks-reserve"
+  }
+]
+```
+
+**Performance Characteristics:**
+- **Minimal Response Format**: Only returns `id`, `name`, and `slug` fields for optimal payload size
+- **Extended Cache TTL**: 600 seconds (vs 300s for other endpoints) due to autocomplete data stability
+- **Query Optimization**: Uses `select()` to limit database fields and reduce memory usage
+- **Fast Response Times**: Optimized for UI interaction with sub-100ms response goals
+
+**Use Cases:**
+- UI typeahead/autocomplete interfaces
+- Quick organization selection in forms
+- Search suggestions for user input
+- Progressive enhancement from autocomplete to full organization details
+
+**Integration Pattern:**
+```javascript
+// Typical frontend usage
+const suggestions = await fetch(`/api/v1/organizations/autocomplete?q=${term}`)
+  .then(res => res.json());
+
+// Then fetch full details when user selects
+const fullOrganization = await fetch(`/api/v1/organizations/${selectedSlug}`)
+  .then(res => res.json());
+```
+
+**Error Response:**
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "q": ["The q field is required.", "The q field must be at least 2 characters."],
+    "limit": ["The limit field must be between 1 and 50."]
+  }
+}
+```
+
+**Validation Rules:**
+- `q`: `required|string|min:2`
+- `limit`: `integer|min:1|max:50`
 
 ### Error Responses
 
