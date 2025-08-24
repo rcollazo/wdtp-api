@@ -22,6 +22,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Organizations caching strategy documentation in `docs/CACHING.md`
 - Organization API resources with inheritance pattern (OrganizationResource/OrganizationListItemResource)
 - API Resources documentation in `docs/API_RESOURCES.md` with field mappings and usage patterns
+- Organizations API endpoints (index and show) with comprehensive search, filtering, and sorting
+- Organizations controller with versioned caching, parameter validation, and error handling
+- Complete API documentation in `docs/API.md` with endpoint specifications and examples
+
+### API Endpoints
+
+#### Organizations API (2025-08-24)
+
+**GET /api/v1/organizations**
+- Paginated organization listing with comprehensive search and filtering
+- Search across name, legal name, and domain fields (case-insensitive)
+- Filter by industry (ID or slug), verification status, and location presence
+- Sort by relevance, name, location count, wage report count, or update time
+- Default filters: active, visible, approved status
+- Cached responses with 300s TTL and automatic invalidation
+
+**GET /api/v1/organizations/{idOrSlug}**
+- Single organization detail endpoint supporting ID or slug resolution
+- Complete organization data including verification timestamps
+- Includes primary industry relationship data
+- Cached responses with 300s TTL per organization
+- Uses defaultFilters() scope for consistent access control
+
+**Query Parameter Support:**
+- `q`: Search term (min 2 characters)
+- `industry_id`/`industry_slug`: Industry filtering (mutually exclusive)
+- `verified`: Boolean verification filter
+- `has_locations`: Boolean location presence filter
+- `per_page`: Pagination (1-100, default 25)
+- `sort`: Sorting options with relevance-based search ordering
+
+**Response Format:**
+- OrganizationListItemResource for index endpoint (optimized payload)
+- OrganizationResource for show endpoint (complete data)
+- Standard Laravel pagination metadata for collections
+- Consistent error responses with validation details
+
+**Cache Strategy:**
+- Version-based invalidation using `orgs:ver` key
+- Index cache keys: `orgs:{ver}:index:{params_hash}`
+- Show cache keys: `orgs:{ver}:show:{idOrSlug}`
+- Automatic cache invalidation via OrganizationObserver
+- 300-second TTL with observer-driven versioning
 
 ### Database Changes
 

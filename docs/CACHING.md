@@ -66,7 +66,15 @@ The organizations system uses structured cache keys that include the cache versi
 // Base version key
 'orgs:ver' => 1  // Incremented on any organization change
 
-// Search results cache  
+// API endpoint cache keys (implemented)
+"orgs:{version}:index:{hash}" => $paginatedResults
+"orgs:1:index:a1b2c3d4" => [/* index results with specific params */]
+
+"orgs:{version}:show:{idOrSlug}" => $organization
+"orgs:1:show:starbucks" => [/* single organization by slug */]
+"orgs:1:show:42" => [/* single organization by ID */]
+
+// Future cache patterns (planned)
 "orgs:search:{$term}:v{$version}" => $results
 "orgs:search:starbucks:v1" => [/* search results */]
 "orgs:search:coffee:v1" => [/* search results */]
@@ -84,6 +92,57 @@ The organizations system uses structured cache keys that include the cache versi
 ```
 
 ### Cache Implementation Examples
+
+#### Organizations Controller Caching (Implemented)
+
+**Index Endpoint Caching:**
+```php
+// OrganizationController@index
+$cacheParams = [
+    'q' => $search ?: null,
+    'industry_id' => $industryId ?: null,
+    'industry_slug' => $industrySlug ?: null,
+    'verified' => $verified,
+    'has_locations' => $hasLocations,
+    'per_page' => $perPage,
+    'sort' => $requestedSort ?: null,
+];
+$cacheKey = 'orgs:'.$this->getCacheVersion().':index:'.md5(json_encode($cacheParams));
+
+$organizations = Cache::remember($cacheKey, 300, function () use (...) {
+    $query = Organization::defaultFilters();
+    // Apply search, filters, sorting
+    return $query->paginate($perPage);
+});
+```
+
+**Show Endpoint Caching:**
+```php
+// OrganizationController@show  
+$cacheKey = 'orgs:'.$this->getCacheVersion().':show:'.$idOrSlug;
+
+$organization = Cache::remember($cacheKey, 300, function () use ($idOrSlug) {
+    return Organization::query()
+        ->defaultFilters()
+        ->with(['primaryIndustry'])
+        ->where(function ($query) use ($idOrSlug) {
+            if (is_numeric($idOrSlug)) {
+                $query->where('id', $idOrSlug);
+            } else {
+                $query->where('slug', $idOrSlug);
+            }
+        })
+        ->firstOrFail();
+});
+```
+
+**Cache Version Management:**
+```php
+private function getCacheVersion(): int
+{
+    return Cache::get('orgs:ver', 1);
+}
+```
 
 #### Search Result Caching
 ```php
