@@ -211,150 +211,183 @@ $nearbyLocations = Location::near(47.6062, -122.3321, 300)->withDistance(47.6062
 $this->assertEqualsWithDelta(278000, $nearbyLocations[1]->distance_meters, 5000); // ±5km tolerance
 ```
 
-## H) DEV TASKS (Implementation WBS)
+## K) Multi-Agent Task Assignments
 
-### DEV TASK 1/6: Database Foundation & PostGIS Setup
+### TASK PAIR 1/6: Database Foundation & PostGIS Setup
 
-**Goal:** Create locations table with PostGIS spatial capabilities and performance indexes
+**DEV TASK 1/6 → wdtp-api-dev**
+- Goal: Create locations table with PostGIS spatial capabilities and performance indexes
+- Dependencies: Organizations table (for FK relationship)
+- Files: database/migrations/2025_08_24_120000_create_locations_table.php, database/migrations/2025_08_24_120001_add_location_search_indexes.php
+- Technical Requirements: PostGIS geography(Point,4326), spatial indexes (GiST), address search indexes (GIN), coordinate validation constraints
+- Acceptance Criteria: PostGIS extension verified, spatial indexes created, coordinate validation enforced, migration rollback tested
+- Commit Message: feat(db): add locations table with PostGIS spatial capabilities and search indexes
 
-**Dependencies:** Organizations table (for FK relationship)
+**TEST TASK 1/6 → wdtp-api-testing**  
+- Goal: Create comprehensive test suite for Location database schema and PostGIS functionality
+- Dependencies: DEV TASK 1/6 completion
+- Files: tests/Unit/Database/LocationMigrationTest.php, tests/Unit/Models/LocationSpatialTest.php
+- Test Requirements: Migration rollback/forward testing, PostGIS extension verification, spatial index performance testing, coordinate constraint validation
+- Acceptance Criteria: All database constraints tested, spatial index functionality verified, coordinate validation edge cases covered
+- Commit Message: test(db): add comprehensive Location database and PostGIS test suite
 
-**Files:**
-- `database/migrations/2025_08_24_120000_create_locations_table.php`
-- `database/migrations/2025_08_24_120001_add_location_search_indexes.php`
+**DOC TASK 1/6 → wdtp-api-docs-maintainer**
+- Goal: Document Location database schema, PostGIS setup, and spatial capabilities
+- Dependencies: DEV TASK 1/6 and TEST TASK 1/6 completion with DocsDelta
+- Files: docs/DATABASE.md (add Locations section), docs/SPATIAL.md (new file for PostGIS documentation), docs/CHANGELOG.md
+- Documentation Requirements: Complete table structure, PostGIS configuration, spatial index strategy, coordinate system explanation
+- Acceptance Criteria: All Location schema documented, PostGIS setup instructions included, spatial query patterns documented
+- Commit Message: docs(db): add Location schema and PostGIS spatial capabilities documentation
 
-**Design Notes:**
-- PostGIS geography(Point,4326) for accurate distance calculations
-- Cached lat/lon columns for quick access without PostGIS functions
-- Comprehensive address fields for US/international locations
-- Performance indexes: GiST spatial, GIN full-text search, composite filtering
+### TASK PAIR 2/6: Core Model & Spatial Observer
 
-**Acceptance Criteria:**
-- PostGIS extension verified and spatial indexes created
-- Coordinate validation constraints enforced
-- Address search performance optimized with GIN index
-- Migration rollback properly removes spatial objects
+**DEV TASK 2/6 → wdtp-api-dev**
+- Goal: Implement Location model with spatial scopes and PostGIS integration
+- Dependencies: DEV TASK 1/6 (database schema)
+- Files: app/Models/Location.php, app/Observers/LocationObserver.php, app/Providers/AppServiceProvider.php
+- Technical Requirements: Spatial scopes (near, withDistance, withinBounds), PostGIS point synchronization, cache version management, coordinate validation
+- Acceptance Criteria: All spatial scopes return accurate calculations, PostGIS point auto-updated, cache invalidation working, coordinate validation prevents invalid values
+- Commit Message: feat(models): add Location model with PostGIS spatial scopes and coordinate validation
 
-**Commit Message:** `feat(db): add locations table with PostGIS spatial capabilities and search indexes`
+**TEST TASK 2/6 → wdtp-api-testing**
+- Goal: Create comprehensive test suite for Location model and spatial functionality
+- Dependencies: DEV TASK 2/6 completion
+- Files: tests/Unit/Models/LocationTest.php, tests/Unit/Models/LocationSpatialScopesTest.php, tests/Unit/Observers/LocationObserverTest.php
+- Test Requirements: All scopes tested with real coordinates, distance calculation accuracy (±5km tolerance), cache behavior verification, coordinate validation edge cases
+- Acceptance Criteria: Spatial scopes tested with Seattle/Portland/Vancouver coordinates, distance calculations accurate, cache invalidation verified, observer behavior tested
+- Commit Message: test(models): add comprehensive Location model and spatial scopes test suite
 
-### DEV TASK 2/6: Core Model & Spatial Observer
+**DOC TASK 2/6 → wdtp-api-docs-maintainer**  
+- Goal: Document Location model capabilities, spatial scopes, and observer behavior
+- Dependencies: DEV TASK 2/6 and TEST TASK 2/6 completion with DocsDelta
+- Files: docs/MODELS.md (add Location section), docs/SPATIAL.md (update with model documentation), docs/CACHING.md (add location cache strategy)
+- Documentation Requirements: All spatial scopes with examples, coordinate validation rules, cache strategy, observer behavior documentation
+- Acceptance Criteria: All model capabilities documented, spatial scope usage examples included, cache invalidation strategy explained
+- Commit Message: docs(models): add Location model and spatial functionality documentation
 
-**Goal:** Implement Location model with spatial scopes and PostGIS integration
+### TASK PAIR 3/6: Spatial API Resources
 
-**Dependencies:** DEV TASK 1 (database schema)
+**DEV TASK 3/6 → wdtp-api-dev**
+- Goal: Create location API resources with distance calculation support
+- Dependencies: DEV TASK 2/6 (Location model)
+- Files: app/Http/Resources/LocationResource.php, app/Http/Resources/LocationListItemResource.php, app/Http/Resources/LocationMinimalResource.php
+- Technical Requirements: Conditional distance_meters field, organization relationship formatting, spatial data consistency across resources
+- Acceptance Criteria: Resources handle spatial data consistently, distance calculations included when available, organization relationships formatted properly
+- Commit Message: feat(api): add Location API resources with spatial distance calculations
 
-**Files:**
-- `app/Models/Location.php`
-- `app/Observers/LocationObserver.php`
-- `app/Providers/AppServiceProvider.php` (register observer, cache bootstrap)
+**TEST TASK 3/6 → wdtp-api-testing**
+- Goal: Create comprehensive test suite for Location API resources
+- Dependencies: DEV TASK 3/6 completion  
+- Files: tests/Unit/Resources/LocationResourceTest.php, tests/Unit/Resources/LocationListItemResourceTest.php, tests/Unit/Resources/LocationMinimalResourceTest.php
+- Test Requirements: Resource formatting with/without relationships, conditional distance_meters field, resource inheritance testing, organization relationship formatting
+- Acceptance Criteria: All resource formats tested, conditional field inclusion verified, resource inheritance working, relationship formatting correct
+- Commit Message: test(api): add comprehensive Location API resources test suite
 
-**Design Notes:**
-- Spatial scopes using ST_DWithin and ST_Distance functions
-- PostGIS point synchronization from lat/lon coordinates
-- Cache version management following Organizations pattern
-- Route binding with slug-or-ID support
+**DOC TASK 3/6 → wdtp-api-docs-maintainer**
+- Goal: Document Location API resource structure and spatial field handling  
+- Dependencies: DEV TASK 3/6 and TEST TASK 3/6 completion with DocsDelta
+- Files: docs/API_RESOURCES.md (add Location section), docs/SPATIAL.md (update with API resource documentation)
+- Documentation Requirements: Resource field mappings, conditional distance_meters documentation, inheritance patterns, spatial data formatting
+- Acceptance Criteria: All resource fields documented with examples, spatial field handling explained, inheritance pattern documented
+- Commit Message: docs(api): add Location API resources and spatial field documentation
 
-**Acceptance Criteria:**
-- All spatial scopes return accurate distance calculations
-- PostGIS point automatically updated when coordinates change
-- Cache invalidation triggers on location changes
-- Coordinate validation prevents invalid lat/lon values
+### TASK PAIR 4/6: Core Spatial API Controller
 
-**Commit Message:** `feat(models): add Location model with PostGIS spatial scopes and coordinate validation`
+**DEV TASK 4/6 → wdtp-api-dev**  
+- Goal: Implement LocationController with spatial search endpoints
+- Dependencies: DEV TASK 3/6 (API resources)
+- Files: app/Http/Controllers/Api/V1/LocationController.php
+- Technical Requirements: Index/show endpoints with spatial parameters, coordinate validation, spatial query optimization, caching strategy
+- Acceptance Criteria: Spatial search works with real coordinates, distance calculations accurate (±5km), caching works with spatial variations, coordinate validation prevents invalid input
+- Commit Message: feat(api): add Location controller with PostGIS spatial search capabilities
 
-### DEV TASK 3/6: Spatial API Resources
+**TEST TASK 4/6 → wdtp-api-testing**
+- Goal: Create comprehensive test suite for Location API controller spatial functionality
+- Dependencies: DEV TASK 4/6 completion
+- Files: tests/Feature/Api/LocationsApiTest.php, tests/Feature/Api/LocationsSpatialTest.php
+- Test Requirements: Spatial search testing with real coordinates, distance calculation validation, parameter validation, cache behavior verification, error handling
+- Acceptance Criteria: All spatial endpoints tested with Seattle/Portland coordinates, distance accuracy verified, parameter validation working, cache behavior tested
+- Commit Message: test(api): add comprehensive Location API controller and spatial search test suite
 
-**Goal:** Create location API resources with distance calculation support
+**DOC TASK 4/6 → wdtp-api-docs-maintainer**
+- Goal: Document Location API endpoints with spatial search capabilities
+- Dependencies: DEV TASK 4/6 and TEST TASK 4/6 completion with DocsDelta  
+- Files: docs/API.md (add Location endpoints), docs/SPATIAL.md (update with API documentation), docs/ROUTES.md, docs/CACHING.md
+- Documentation Requirements: Complete endpoint documentation, spatial parameter examples, coordinate validation rules, cache strategy documentation
+- Acceptance Criteria: All endpoints documented with examples, spatial parameters explained, coordinate validation documented, cache strategy included
+- Commit Message: docs(api): add Location API endpoints and spatial search documentation
 
-**Dependencies:** DEV TASK 2 (Location model)
+### TASK PAIR 5/6: Nearby & Autocomplete Endpoints
 
-**Files:**
-- `app/Http/Resources/LocationResource.php`
-- `app/Http/Resources/LocationListItemResource.php`
-- `app/Http/Resources/LocationMinimalResource.php`
+**DEV TASK 5/6 → wdtp-api-dev**
+- Goal: Add specialized spatial endpoints for nearby search and location autocomplete
+- Dependencies: DEV TASK 4/6 (base controller)
+- Files: app/Http/Controllers/Api/V1/LocationController.php (add nearby and autocomplete methods)
+- Technical Requirements: Dedicated nearby endpoint, spatial autocomplete filtering, optimized caching, minimal response formats
+- Acceptance Criteria: Nearby endpoint sorts by distance accurately, autocomplete provides relevant suggestions, spatial filtering improves relevance, response times under 200ms
+- Commit Message: feat(api): add Location nearby search and spatial autocomplete endpoints
 
-**Design Notes:**
-- LocationListItemResource for index endpoint with spatial data
-- LocationMinimalResource for autocomplete performance
-- Conditional distance_meters field when spatial query used
-- Organization relationship as inline object {id,name,slug}
+**TEST TASK 5/6 → wdtp-api-testing**
+- Goal: Create comprehensive test suite for Location nearby and autocomplete endpoints  
+- Dependencies: DEV TASK 5/6 completion
+- Files: tests/Feature/Api/LocationsNearbyTest.php, tests/Feature/Api/LocationsAutocompleteTest.php  
+- Test Requirements: Nearby endpoint distance sorting, autocomplete relevance testing, spatial filtering validation, performance testing, cache behavior
+- Acceptance Criteria: Distance sorting accuracy verified, autocomplete relevance tested, spatial filtering working, performance benchmarks met, cache behavior validated
+- Commit Message: test(api): add comprehensive Location nearby and autocomplete endpoint test suite
 
-**Acceptance Criteria:**
-- Resources handle spatial data consistently
-- Distance calculations included when available
-- Organization relationships formatted properly
-- Resource inheritance maintains consistent field structure
+**DOC TASK 5/6 → wdtp-api-docs-maintainer**
+- Goal: Document Location nearby and autocomplete endpoints with performance details
+- Dependencies: DEV TASK 5/6 and TEST TASK 5/6 completion with DocsDelta
+- Files: docs/API.md (update with nearby/autocomplete), docs/PERFORMANCE.md (add location performance notes), docs/SPATIAL.md
+- Documentation Requirements: Nearby endpoint documentation, autocomplete functionality, performance characteristics, spatial filtering examples
+- Acceptance Criteria: Nearby endpoint documented with examples, autocomplete functionality explained, performance characteristics documented, spatial filtering examples included
+- Commit Message: docs(api): add Location nearby and autocomplete endpoint documentation with performance details
 
-**Commit Message:** `feat(api): add Location API resources with spatial distance calculations`
+### TASK PAIR 6/6: Route Registration & Spatial Integration
 
-### DEV TASK 4/6: Core Spatial API Controller
+**DEV TASK 6/6 → wdtp-api-dev**
+- Goal: Register all location routes and ensure complete spatial API integration
+- Dependencies: DEV TASK 5/6 (complete controller)
+- Files: routes/api.php (add location routes)
+- Technical Requirements: Register all 5 endpoints with proper ordering, verify spatial query performance, complete OpenAPI documentation, integration testing
+- Acceptance Criteria: All routes resolve correctly, spatial queries perform efficiently, OpenAPI documentation correct, full API workflow tested
+- Commit Message: feat(api): register Location API routes and complete spatial integration
 
-**Goal:** Implement LocationController with spatial search endpoints
+**TEST TASK 6/6 → wdtp-api-testing**
+- Goal: Create comprehensive integration test suite for complete Location API
+- Dependencies: DEV TASK 6/6 completion
+- Files: tests/Feature/Api/LocationsIntegrationTest.php, tests/Feature/Api/LocationsPerformanceTest.php
+- Test Requirements: Full API workflow testing, route resolution verification, integration with Organizations API, performance benchmarking under load
+- Acceptance Criteria: Complete API workflow tested, route integration verified, Organizations integration working, performance benchmarks met, no regressions in existing tests
+- Commit Message: test(api): add comprehensive Location API integration and performance test suite
 
-**Dependencies:** DEV TASK 3 (API resources)
+**DOC TASK 6/6 → wdtp-api-docs-maintainer**
+- Goal: Document complete Location API integration and update project status
+- Dependencies: DEV TASK 6/6 and TEST TASK 6/6 completion with DocsDelta
+- Files: docs/API.md (finalize Location section), docs/ROUTES.md (complete route table), docs/TESTING.md (update test counts), docs/CHANGELOG.md, CLAUDE.md (update status)
+- Documentation Requirements: Complete Location API integration, route documentation, test count updates, project status change from TODO to COMPLETE
+- Acceptance Criteria: Complete Location API documented, all routes in route table, test counts updated, CLAUDE.md shows Locations as COMPLETE
+- Commit Message: docs(api): finalize Location API documentation and update project status to COMPLETE
 
-**Files:**
-- `app/Http/Controllers/Api/V1/LocationController.php`
+## L) Task Execution Protocol
 
-**Design Notes:**
-- Index endpoint with `near` and `radius_km` spatial parameters
-- Show endpoint with optional distance calculation
-- Advanced spatial filtering with geographic bounds
-- Caching strategy optimized for spatial queries
+**Multi-Agent Handoff Pattern:**
+1. Execute DEV TASK N/6 → wdtp-api-dev
+2. Upon DEV completion, execute TEST TASK N/6 → wdtp-api-testing  
+3. Upon TEST completion, execute DOC TASK N/6 → wdtp-api-docs-maintainer
+4. Wait for "NEXT" command before proceeding to next task pair
+5. Continue until all 6 task pairs complete
 
-**Acceptance Criteria:**
-- Spatial search works with real coordinates
-- Distance calculations accurate within 5km tolerance
-- Caching system works with spatial query variations
-- Parameter validation prevents invalid coordinates
+**Expected Timeline:**
+- Total: 18 tasks (6 DEV + 6 TEST + 6 DOC)
+- Estimated: 15-20 hours of implementation time
+- Deliverable: Complete Location API with 90+ passing tests and full documentation
 
-**Commit Message:** `feat(api): add Location controller with PostGIS spatial search capabilities`
-
-### DEV TASK 5/6: Nearby & Autocomplete Endpoints
-
-**Goal:** Add specialized spatial endpoints for nearby search and location autocomplete
-
-**Dependencies:** DEV TASK 4 (base controller)
-
-**Files:**
-- `app/Http/Controllers/Api/V1/LocationController.php` (add methods)
-
-**Design Notes:**
-- Dedicated `/nearby` endpoint requiring spatial parameters
-- Location autocomplete with optional spatial filtering
-- Optimized caching for real-time spatial queries
-- Minimal response formats for performance
-
-**Acceptance Criteria:**
-- Nearby endpoint sorts results by distance accurately
-- Autocomplete provides relevant location suggestions
-- Spatial filtering improves autocomplete relevance
-- Response times under 200ms for typical queries
-
-**Commit Message:** `feat(api): add Location nearby search and spatial autocomplete endpoints`
-
-### DEV TASK 6/6: Route Registration & Spatial Integration
-
-**Goal:** Register all location routes and ensure complete spatial API integration
-
-**Dependencies:** DEV TASK 5 (complete controller)
-
-**Files:**
-- `routes/api.php` (add location routes)
-
-**Design Notes:**
-- Register all 5 location endpoints with proper ordering
-- Verify spatial query performance under load
-- Complete OpenAPI documentation with spatial examples
-- Integration testing with real geographic data
-
-**Acceptance Criteria:**
-- All location routes resolve and function correctly
-- Spatial queries perform efficiently with indexes
-- OpenAPI documentation shows spatial parameters correctly
-- Full location API workflow tested end-to-end
-
-**Commit Message:** `feat(api): register Location API routes and complete spatial integration`
+**Integration Verification:**
+- No regressions in existing 153 tests
+- New Location tests increase total to 240+ tests
+- Complete OpenAPI documentation generation
+- Full spatial query functionality verified
 
 ## I) Expected Deliverables
 
@@ -376,7 +409,7 @@ $this->assertEqualsWithDelta(278000, $nearbyLocations[1]->distance_meters, 5000)
 
 This architecture provides the spatial foundation for wage transparency while maintaining consistency with the proven Organizations implementation pattern. The comprehensive spatial testing strategy ensures accurate distance calculations and optimal performance for location-based queries.
 
-**Implementation Status:** Ready for execution following the 6-task DEV/DOC workflow established with Organizations.
+**Implementation Status:** Ready for execution following the 18-task multi-agent workflow (6 DEV tasks + 6 TEST tasks + 6 DOC tasks) with specialized agent assignments for comprehensive implementation, testing, and documentation.
 
 ---
 
