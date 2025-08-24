@@ -226,6 +226,247 @@
                 }
             }
         },
+        "/api/v1/organizations": {
+            "get": {
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "List organizations",
+                "description": "Get paginated list of organizations with search, filtering and sorting",
+                "operationId": "54ffd98fe34a49c738c616139213bf8a",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search term for organization name, legal name or domain (case-insensitive)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "example": "starbucks"
+                        }
+                    },
+                    {
+                        "name": "industry_id",
+                        "in": "query",
+                        "description": "Filter by primary industry ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "industry_slug",
+                        "in": "query",
+                        "description": "Filter by primary industry slug",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "coffee-shop"
+                        }
+                    },
+                    {
+                        "name": "verified",
+                        "in": "query",
+                        "description": "Filter by verification status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "has_locations",
+                        "in": "query",
+                        "description": "Filter organizations that have locations",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort order (relevance only works with search)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "name",
+                            "enum": [
+                                "relevance",
+                                "name",
+                                "locations",
+                                "wage_reports",
+                                "updated"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Organizations retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/OrganizationListItem"
+                                            }
+                                        },
+                                        "links": {
+                                            "description": "Pagination links",
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "description": "Pagination metadata",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{idOrSlug}": {
+            "get": {
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "Get single organization",
+                "description": "Retrieve a specific organization by ID or slug with full details",
+                "operationId": "e65d0e167fab6f8d7fdee903fbf210a6",
+                "parameters": [
+                    {
+                        "name": "idOrSlug",
+                        "in": "path",
+                        "description": "Organization ID (integer) or slug (string)",
+                        "required": true,
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                {
+                                    "type": "string",
+                                    "example": "starbucks"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Organization retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/Organization"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Organization not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/autocomplete": {
+            "get": {
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "Organization autocomplete search",
+                "description": "Fast autocomplete endpoint for organization search with minimal response format",
+                "operationId": "16f0a0d5a688e745a2beb3766fff89d4",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search query (minimum 2 characters)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "example": "starb"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of results (default 10, max 50)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 50,
+                            "minimum": 1,
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Autocomplete suggestions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Starbucks"
+                                            },
+                                            "slug": {
+                                                "type": "string",
+                                                "example": "starbucks"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/register": {
             "post": {
                 "tags": [
@@ -885,6 +1126,146 @@
                 },
                 "type": "object"
             },
+            "Organization": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120,
+                        "example": "Starbucks"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "starbucks"
+                    },
+                    "legal_name": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "example": "Starbucks Corporation"
+                    },
+                    "domain": {
+                        "type": "string",
+                        "example": "starbucks.com"
+                    },
+                    "website_url": {
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://starbucks.com"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Global coffee chain",
+                        "nullable": true
+                    },
+                    "logo_url": {
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://example.com/logo.png",
+                        "nullable": true
+                    },
+                    "primary_industry": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Coffee Shop"
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "coffee-shop"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "locations_count": {
+                        "type": "integer",
+                        "example": 8450
+                    },
+                    "wage_reports_count": {
+                        "type": "integer",
+                        "example": 2341
+                    },
+                    "is_verified": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-15T10:30:00Z",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2023-12-01T08:15:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-15T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "OrganizationListItem": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Starbucks"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "starbucks"
+                    },
+                    "domain": {
+                        "type": "string",
+                        "example": "starbucks.com"
+                    },
+                    "primary_industry": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Coffee Shop"
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "coffee-shop"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "locations_count": {
+                        "type": "integer",
+                        "example": 8450
+                    },
+                    "wage_reports_count": {
+                        "type": "integer",
+                        "example": 2341
+                    },
+                    "is_verified": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "title": "User",
                 "description": "User model",
@@ -1110,6 +1491,10 @@
         {
             "name": "Industries",
             "description": "Industries"
+        },
+        {
+            "name": "Organizations",
+            "description": "Organizations"
         }
     ]
 }

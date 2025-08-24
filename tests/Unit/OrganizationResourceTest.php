@@ -20,9 +20,7 @@ class OrganizationResourceTest extends TestCase
     public function test_organization_list_item_resource_returns_minimal_fields(): void
     {
         $organization = Organization::factory()->create([
-            'name' => 'Test Organization',
-            'slug' => 'test-organization',
-            'domain' => 'test.com',
+            'primary_industry_id' => null,
             'locations_count' => 5,
             'wage_reports_count' => 12,
             'verification_status' => 'verified',
@@ -33,9 +31,9 @@ class OrganizationResourceTest extends TestCase
 
         $expected = [
             'id' => $organization->id,
-            'name' => 'Test Organization',
-            'slug' => 'test-organization',
-            'domain' => 'test.com',
+            'name' => $organization->name,
+            'slug' => $organization->slug,
+            'domain' => $organization->domain,
             'locations_count' => 5,
             'wage_reports_count' => 12,
             'is_verified' => true,

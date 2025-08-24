@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\IndustryController;
+use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthCheckController;
 use Illuminate\Support\Facades\Route;
@@ -23,4 +24,9 @@ Route::prefix('v1')->group(function () {
     Route::get('industries', [IndustryController::class, 'index']);
     Route::get('industries/autocomplete', [IndustryController::class, 'autocomplete']);
     Route::get('industries/{idOrSlug}', [IndustryController::class, 'show']);
+
+    // Organizations endpoints
+    Route::get('organizations', [OrganizationController::class, 'index']);
+    Route::get('organizations/autocomplete', [OrganizationController::class, 'autocomplete']);
+    Route::get('organizations/{idOrSlug}', [OrganizationController::class, 'show']);
 });

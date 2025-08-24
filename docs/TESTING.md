@@ -6,27 +6,35 @@ This guide covers testing practices, patterns, and conventions for the **What Do
 ## Running Existing Tests
 
 ### Current Test Suite Status
-The WDTP project currently has **6 test classes** with **33 passing tests** and **142 assertions**:
+The WDTP project currently has **12 test classes** with **122 passing tests** and **914 assertions**:
 
 **Unit Tests:**
 - `ExampleTest` - Basic PHPUnit example test (1 test)
+- `IndustryConstraintsTest` - Database constraints and integrity testing (16 tests)
+- `IndustryObserverTest` - Industry model observer and lifecycle testing (14 tests) 
+- `IndustryResourceTest` - API resource transformation testing (9 tests)
+- `IndustryTest` - Industry model functionality testing (10 tests)
 - `UserModelTest` - Comprehensive User model testing (12 tests)
 
 **Feature Tests:**
+- `AdminSeederTest` - Admin user seeding functionality (4 tests)
+- `AuthenticationTest` - Complete authentication flow testing (13 tests)
 - `ExampleTest` - Basic Laravel application test (1 test)
 - `HealthCheckTest` - API health check endpoints (2 tests)
-- `AuthenticationTest` - Complete authentication flow testing (13 tests)
-- `AdminSeederTest` - Admin user seeding functionality (4 tests)
+- `IndustryApiTest` - Industries API endpoints comprehensive testing (15 tests)
+- `IndustryEdgeCasesTest` - Edge cases and error handling for industries (13 tests)
+- `IndustrySeederTest` - Industry taxonomy seeding functionality (6 tests)
+- `SwaggerDocumentationTest` - API documentation and OpenAPI testing (6 tests)
 
 ### Running Tests
 
 ```bash
-# Run all tests (33 tests currently)
+# Run all tests (122 tests currently)
 ./vendor/bin/sail test
 
 # Run specific test suite
-./vendor/bin/sail test --testsuite=Unit      # 13 tests
-./vendor/bin/sail test --testsuite=Feature   # 20 tests
+./vendor/bin/sail test --testsuite=Unit      # 62 tests
+./vendor/bin/sail test --testsuite=Feature   # 60 tests
 
 # Run specific test class
 ./vendor/bin/sail test --filter=UserModelTest
@@ -90,8 +98,8 @@ PASS  Tests\Feature\AdminSeederTest
 ✓ prevents duplicate admin creation
 ✓ creates admin with proper role and enabled status
 
-Tests:    33 passed (142 assertions)
-Duration: ~2.1s
+Tests:    122 passed (914 assertions)
+Duration: ~11.9s
 ```
 
 ## Existing Test Details
