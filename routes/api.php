@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\IndustryController;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\PositionCategoryController;
+use App\Http\Controllers\Api\V1\WageReportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HealthCheckController;
 use Illuminate\Support\Facades\Route;
@@ -35,4 +36,8 @@ Route::prefix('v1')->group(function () {
     Route::get('position-categories', [PositionCategoryController::class, 'index']);
     Route::get('position-categories/autocomplete', [PositionCategoryController::class, 'autocomplete']);
     Route::get('position-categories/{idOrSlug}', [PositionCategoryController::class, 'show']);
+
+    // Wage Reports endpoints (public read access)
+    Route::get('wage-reports', [WageReportController::class, 'index']);
+    Route::get('wage-reports/{wageReportId}', [WageReportController::class, 'show']);
 });
