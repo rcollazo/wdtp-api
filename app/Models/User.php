@@ -4,14 +4,16 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use LevelUp\Experience\Concerns\GiveExperience;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use GiveExperience, HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -66,5 +68,13 @@ class User extends Authenticatable
             'birthday' => 'date',
             'enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the wage reports created by this user
+     */
+    public function wageReports(): HasMany
+    {
+        return $this->hasMany(WageReport::class);
     }
 }
