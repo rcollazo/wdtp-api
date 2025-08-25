@@ -27,6 +27,80 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complete API documentation in `docs/API.md` with endpoint specifications and examples
 - Organizations autocomplete endpoint with performance optimization and extended caching
 
+### Milestone: Wage Reports v1.0 Implementation Complete (2025-08-25)
+
+The core Wage Reports feature is now fully implemented with comprehensive business logic, data quality controls, and gamification integration:
+
+**Complete Feature Set:**
+- ✅ **WageReport Model** - Comprehensive entity with normalization engine and validation
+- ✅ **Wage Normalization** - Integer-based math converts all periods to hourly rates
+- ✅ **Sanity Scoring** - MAD (Median Absolute Deviation) algorithm for outlier detection
+- ✅ **Observer Pattern** - Automatic business logic for lifecycle events
+- ✅ **Counter Management** - Real-time denormalized counters with atomic updates
+- ✅ **Gamification Integration** - Experience points and achievements via laravel-level-up
+- ✅ **Spatial Queries** - PostGIS integration for location-based wage searches
+- ✅ **Anonymous Support** - Optional user association for privacy
+- ✅ **Status Workflow** - Approved/pending/rejected with automatic assessment
+
+**Data Quality & Normalization:**
+- Wage period normalization: hourly, weekly, biweekly, monthly, yearly, per_shift
+- Constants: DEFAULT_HOURS_PER_WEEK (40), DEFAULT_SHIFT_HOURS (8)
+- Bounds checking: MIN_HOURLY_CENTS ($2.00), MAX_HOURLY_CENTS ($200.00)
+- Integer-only calculations prevent floating-point precision errors
+- Automatic derivation of organization_id from location relationship
+
+**Sanity Scoring Algorithm:**
+- Statistical hierarchy: Location-level → Organization-level → Global bounds
+- MAD-based outlier detection with K_MAD = 6 (conservative threshold)
+- Scoring scale: -5 (strong outlier) to +5 (normal range)
+- Automatic status assignment: sanity_score >= 0 → approved, < 0 → pending
+- Minimum sample size of 3 approved reports for reliable statistics
+
+**Observer Business Logic:**
+- **Creating**: Derive organization, normalize wage, calculate sanity score, set status
+- **Created**: Update counters (approved only), award XP, bump cache versions
+- **Updated**: Handle status changes, recalculate if wage fields changed
+- **Deleted/Restored**: Manage counters with underflow protection
+
+**Counter Management:**
+- Atomic database operations with transaction safety
+- Underflow protection prevents negative counts
+- Status-aware counting (only approved reports increment counters)
+- Real-time updates via observer events
+
+**Gamification Integration:**
+- Base submission: 10 XP for approved reports
+- First report bonus: 25 XP for user's first submission
+- Anonymous protection: No XP for anonymous submissions
+- Integration with laravel-level-up package
+
+**Query Capabilities:**
+- Status filtering: approved(), pending(), rejected() scopes
+- Spatial queries: nearby(), withDistance(), orderByDistance() scopes
+- Organization/location filtering: forOrganization(), forLocation() scopes
+- Date and wage filtering: since(), range(), inCurrency() scopes
+- Job filtering: byJobTitle(), byEmploymentType() scopes
+
+**Performance Optimizations:**
+- Composite indexes on (location_id, status) and (organization_id, status)
+- Individual indexes on searchable fields (job_title, employment_type, etc.)
+- Denormalized counters avoid expensive COUNT(*) queries
+- Version-based cache invalidation strategy
+
+**Testing Coverage:**
+- Comprehensive model testing with edge cases and validation
+- Observer behavior testing with counter management verification
+- Normalization engine testing with all wage periods
+- Sanity scoring algorithm testing with statistical scenarios
+- Spatial query testing with PostGIS integration
+
+**Documentation:**
+- Complete WageReport entity documentation in `docs/ENTITIES.md`
+- Normalization engine with examples and formulas
+- MAD algorithm explanation with real-world examples
+- Observer pattern documentation with business logic flow
+- Performance considerations and optimization strategies
+
 ### Milestone: Organizations API Complete (2025-08-24)
 
 The Organizations API is now fully implemented with all planned endpoints:
