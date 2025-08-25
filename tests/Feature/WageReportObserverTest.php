@@ -467,4 +467,62 @@ class WageReportObserverTest extends TestCase
         $bonusXP = $experiences->where('reason', 'first_wage_report');
         $this->assertEquals(1, $bonusXP->count()); // Still just one bonus
     }
+
+    /** @test */
+    public function it_handles_observer_exceptions_gracefully()
+    {
+        $user = User::factory()->create();
+        $organization = Organization::factory()->create();
+        $location = Location::factory()->for($organization)->create();
+
+        // Test observer handles edge cases without throwing exceptions
+        $wageReport = WageReport::factory()->create([
+            'user_id' => $user->id,
+            'organization_id' => $organization->id,
+            'location_id' => $location->id,
+            'wage_period' => 'hourly',
+            'amount_cents' => 1500,
+        ]);
+
+        // Delete location to test orphaned references
+        $location->delete();
+
+        // Should not throw exception when trying to update counters for deleted location
+        $this->expectNotToPerformAssertions();
+        $wageReport->delete();
+    }
+
+    /** @test */
+    public function it_calculates_sanity_score_with_organization_fallback()
+    {
+        $user = User::factory()->create();
+        $organization = Organization::factory()->create();
+        $location1 = Location::factory()->for($organization)->create();
+        $location2 = Location::factory()->for($organization)->create();
+
+        // Create approved reports at organization level (different locations)
+        $wages = [1200, 1300, 1400, 1500, 1600]; // $12-16/hour
+        foreach ($wages as $wage) {
+            WageReport::factory()->create([
+                'organization_id' => $organization->id,
+                'location_id' => $location1->id,
+                'wage_period' => 'hourly',
+                'amount_cents' => $wage,
+                'status' => 'approved',
+            ]);
+        }
+
+        // Create report at different location but same organization
+        $normalReport = WageReport::factory()->create([
+            'user_id' => $user->id,
+            'organization_id' => $organization->id,
+            'location_id' => $location2->id, // Different location
+            'wage_period' => 'hourly',
+            'amount_cents' => 1350, // Within org range
+        ]);
+
+        // Should use organization-level statistics for sanity scoring
+        $this->assertNotNull($normalReport->sanity_score);
+        $this->assertContains($normalReport->status, ['approved', 'pending']);
+    }
 }
