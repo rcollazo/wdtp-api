@@ -53,12 +53,10 @@ class Location extends Model
 
     /**
      * Get all wage reports for this location.
-     *
-     * Note: This relationship will be functional when WageReport model is implemented.
      */
     public function wageReports(): HasMany
     {
-        return $this->hasMany('App\Models\WageReport');
+        return $this->hasMany(WageReport::class);
     }
 
     /**
