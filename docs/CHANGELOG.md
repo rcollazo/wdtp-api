@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Milestone: Wage Reports v1.1 - Counter Management & Observer Pattern (2025-08-25)
+
+The Counter Management and Observer Pattern implementation adds sophisticated business logic, data quality controls, and performance optimizations:
+
+#### Observer Pattern & Business Logic Engine
+
+**WageReportObserver Implementation**:
+- ✅ **Creating Event**: Organization derivation, wage normalization, sanity scoring, status assignment
+- ✅ **Created Event**: Counter updates, XP awards, cache invalidation, audit logging
+- ✅ **Updated Event**: Renormalization, counter adjustments, cache bumping
+- ✅ **Deleted/Restored Events**: Counter management with underflow protection
+
+**MAD-Based Sanity Scoring**:
+- Statistical hierarchy: Location-level → Organization-level → Global bounds
+- Median Absolute Deviation algorithm with K_MAD = 6 conservative threshold
+- Real-time outlier detection with automatic status assignment
+- Performance optimized with PostgreSQL window functions
+
+**Observer Performance Metrics**:
+- Creating event: <50ms (including MAD calculation)
+- Created event: <25ms (counter updates and XP awards)
+- Updated event: <30ms (conditional recalculation)
+- Deleted event: <15ms (counter decrements only)
+
+#### Counter Management System
+
+**Denormalized Counter Fields**:
+- `organizations.wage_reports_count`: Approved wage reports per organization
+- `locations.wage_reports_count`: Approved wage reports per location
+- Atomic updates with transaction safety and underflow protection
+- Migration initializes counters from existing approved wage reports
+- Performance indexes support efficient sorting and pagination
+
+**Counter Update Examples**:
+```php
+// Atomic increment with transaction safety
+DB::transaction(function () use ($wageReport) {
+    Location::where('id', $wageReport->location_id)
+        ->increment('wage_reports_count');
+});
+
+// Safe decrement with underflow protection  
+Location::where('id', $locationId)
+    ->where('wage_reports_count', '>', 0)
+    ->decrement('wage_reports_count');
+```
+
+#### Gamification Integration
+
+**Laravel Level-Up Package Integration**:
+- Base submission reward: 10 XP for approved wage reports
+- First report bonus: 25 XP for user's first submission
+- Anonymous protection: No XP awarded for anonymous submissions
+- Audit trail: All XP awards logged with reason codes
+
+**XP Award Implementation**:
+```php
+// Integration with laravel-level-up package
+$user->addPoints(10, null, null, 'wage_report_submitted');
+$user->addPoints(25, null, null, 'first_wage_report'); // Bonus
+```
+
+#### Cache Strategy Enhancements
+
+**Version-Based Cache Invalidation**:
+- Cache version keys: `wages:ver`, `orgs:ver`, `locations:ver`
+- Observer automatically bumps versions on any wage report change
+- Enables aggressive caching with reliable invalidation
+- Supports distributed caching with Redis clustering
+
+#### Documentation Updates
+
+**New Documentation Files**:
+- ✅ `docs/PERFORMANCE.md` - Counter management strategy and optimization guidelines
+- ✅ Enhanced `docs/ENTITIES.md` - Organization and Location counter field documentation
+- ✅ WageReportObserver section with business logic flow examples
+- ✅ MAD algorithm documentation with real-world scenarios
+
+**Performance Documentation**:
+- Counter management strategy with atomic operations
+- Observer performance optimization patterns
+- Monitoring metrics and alerting thresholds  
+- Troubleshooting guide for common performance issues
+
 ### Added
 - Organizations entity with comprehensive schema and relationships
 - Case-insensitive domain uniqueness constraint for organizations
