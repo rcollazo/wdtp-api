@@ -9,6 +9,7 @@ Complete API documentation for the What Do They Pay (WDTP) platform REST endpoin
 - [Common Patterns](#common-patterns)
 - [Industries API](#industries-api)
 - [Organizations API](#organizations-api)
+- [Position Categories API](#position-categories-api)
 
 ---
 
@@ -721,6 +722,357 @@ class OrganizationApiError extends Error {
 - **Index**: < 200ms for paginated results with filtering
 - **Show**: < 150ms for single organization with relationships
 - **Cache Hit Rate**: > 80% in typical usage patterns
+
+---
+
+## Position Categories API
+
+Complete documentation for position category endpoints with industry filtering, search, and caching.
+
+### List Position Categories
+
+**Endpoint:** `GET /api/v1/position-categories`
+
+**Description:** Get paginated list of position categories with industry filtering, search, and status filtering capabilities.
+
+**Query Parameters:**
+- `industry` (string): Filter by industry ID (integer) or slug (string)
+- `q` (string, min: 2): Search term for position name or description (case-insensitive)
+- `status` (string, default: "active"): Filter by status (`active`, `inactive`, `all`)
+- `per_page` (integer, 1-100, default: 25): Items per page
+
+**Default Filters Applied:**
+- `status = 'active'` (unless status='all' specified)
+- Results ordered by industry name, then position name
+
+**Cache Key:** `position-categories:{version}:index:{hash}`  
+**Cache TTL:** 300 seconds
+
+**Example Request:**
+```http
+GET /api/v1/position-categories?industry=restaurants&q=server&per_page=10
+```
+
+**Example Response:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Server",
+      "slug": "server-restaurants",
+      "description": "Takes customer orders, serves food and beverages, handles payment processing",
+      "status": "active",
+      "industry": {
+        "id": 3,
+        "name": "Restaurants",
+        "slug": "restaurants"
+      },
+      "created_at": "2024-01-15T10:30:00.000Z",
+      "updated_at": "2024-01-20T14:22:45.000Z"
+    },
+    {
+      "id": 15,
+      "name": "Server Assistant",
+      "slug": "server-assistant-restaurants",
+      "description": "Supports servers by clearing tables, refilling drinks, and basic customer service",
+      "status": "active",
+      "industry": {
+        "id": 3,
+        "name": "Restaurants",
+        "slug": "restaurants"
+      },
+      "created_at": "2024-01-16T11:20:00.000Z",
+      "updated_at": "2024-01-21T09:15:30.000Z"
+    }
+  ],
+  "links": {
+    "first": "http://api.wdtp.local/api/v1/position-categories?page=1",
+    "last": "http://api.wdtp.local/api/v1/position-categories?page=3",
+    "prev": null,
+    "next": "http://api.wdtp.local/api/v1/position-categories?page=2"
+  },
+  "meta": {
+    "current_page": 1,
+    "from": 1,
+    "last_page": 3,
+    "path": "http://api.wdtp.local/api/v1/position-categories",
+    "per_page": 10,
+    "to": 10,
+    "total": 27
+  }
+}
+```
+
+**Search Behavior:**
+- Searches across `name` and `description` fields
+- Uses PostgreSQL ILIKE for case-insensitive matching
+- Results automatically ordered by industry name, then position name
+- Minimum 2 characters required for search term
+
+**Filtering Logic:**
+- `industry` parameter accepts either numeric ID or string slug
+- `status` parameter defaults to 'active' only, use 'all' to include inactive
+- Empty results return HTTP 200 with empty data array
+
+### Get Single Position Category
+
+**Endpoint:** `GET /api/v1/position-categories/{idOrSlug}`
+
+**Description:** Retrieve a specific position category by ID or slug with complete details including industry relationship.
+
+**Parameters:**
+- `idOrSlug` (required): Position Category ID (integer) or slug (string)
+
+**Resolution Logic:**
+- If parameter is numeric, searches by ID first
+- If parameter is non-numeric, searches by slug
+- If numeric parameter not found by ID, falls back to slug search
+
+**Cache Key:** `position-categories:{version}:show:{idOrSlug}`  
+**Cache TTL:** 300 seconds
+
+**Example Request:**
+```http
+GET /api/v1/position-categories/server-restaurants
+# OR
+GET /api/v1/position-categories/1
+```
+
+**Example Response:**
+```json
+{
+  "data": {
+    "id": 1,
+    "name": "Server",
+    "slug": "server-restaurants", 
+    "description": "Takes customer orders, serves food and beverages, handles payment processing. Primary customer-facing role in restaurant operations.",
+    "status": "active",
+    "industry": {
+      "id": 3,
+      "name": "Restaurants",
+      "slug": "restaurants",
+      "description": "Full-service dining establishments, casual dining, and fine dining restaurants"
+    },
+    "created_at": "2024-01-15T10:30:00.000Z",
+    "updated_at": "2024-01-20T14:22:45.000Z"
+  }
+}
+```
+
+**Response Fields:**
+
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| `id` | integer | Primary key | `1` |
+| `name` | string | Position name | `"Server"` |
+| `slug` | string | URL-friendly identifier | `"server-restaurants"` |
+| `description` | string\|null | Position description | `"Takes customer orders..."` |
+| `status` | string | Position status | `"active"` |
+| `industry` | object | Industry relationship | `{"id":3,"name":"Restaurants","slug":"restaurants"}` |
+| `created_at` | string | ISO 8601 creation timestamp | `"2024-01-15T10:30:00.000Z"` |
+| `updated_at` | string | ISO 8601 update timestamp | `"2024-01-20T14:22:45.000Z"` |
+
+### Position Category Autocomplete
+
+**Endpoint:** `GET /api/v1/position-categories/autocomplete`
+
+**Description:** Fast autocomplete endpoint for position category search with minimal response format optimized for typeahead interfaces.
+
+**Query Parameters:**
+- `q` (required, string, min: 2): Search term for position name or description
+- `industry` (optional, string): Filter by industry ID or slug
+- `limit` (optional, integer, 1-50, default: 10): Maximum number of results
+
+**Cache Key:** `position-categories:{version}:ac:{hash}`  
+**Cache TTL:** 300 seconds
+
+**Example Request:**
+```http
+GET /api/v1/position-categories/autocomplete?q=serv&industry=restaurants&limit=5
+```
+
+**Example Response (Minimal Format):**
+```json
+[
+  {
+    "id": 1,
+    "name": "Server",
+    "slug": "server-restaurants",
+    "industry_name": "Restaurants"
+  },
+  {
+    "id": 15,
+    "name": "Server Assistant",
+    "slug": "server-assistant-restaurants", 
+    "industry_name": "Restaurants"
+  },
+  {
+    "id": 28,
+    "name": "Service Manager",
+    "slug": "service-manager-restaurants",
+    "industry_name": "Restaurants"
+  }
+]
+```
+
+**Performance Characteristics:**
+- **Minimal Response Format**: Only returns `id`, `name`, `slug`, and `industry_name` fields
+- **Active Positions Only**: Automatically filters to active status positions
+- **Query Optimization**: Uses select() to limit database fields and eager loads industry
+- **Fast Response Times**: Optimized for UI interaction with sub-100ms response goals
+
+**Use Cases:**
+- UI typeahead/autocomplete interfaces for wage report submission
+- Position selection in forms and filters
+- Search suggestions for user input during report creation
+- Progressive enhancement from autocomplete to full position details
+
+### Error Responses
+
+**400 Bad Request:**
+```json
+{
+  "message": "Bad Request"
+}
+```
+
+**404 Not Found:**
+```json
+{
+  "message": "No query results for model [App\\Models\\PositionCategory] 1"
+}
+```
+
+**422 Validation Error:**
+```json
+{
+  "message": "The given data was invalid.",
+  "errors": {
+    "q": ["The q field is required.", "The q field must be at least 2 characters."],
+    "per_page": ["The per_page field must be between 1 and 100."],
+    "status": ["The selected status is invalid."],
+    "limit": ["The limit field must be between 1 and 50."]
+  }
+}
+```
+
+### Parameter Validation Rules
+
+**Index Endpoint:**
+- `industry`: `sometimes|string|max:255`
+- `q`: `sometimes|string|min:2|max:255` 
+- `status`: `sometimes|string|in:active,inactive,all`
+- `per_page`: `sometimes|integer|min:1|max:100`
+
+**Autocomplete Endpoint:**
+- `q`: `required|string|min:2|max:255`
+- `industry`: `sometimes|string|max:255`
+- `limit`: `sometimes|integer|min:1|max:50`
+
+**Show Endpoint:**
+- `idOrSlug`: Resolved automatically based on numeric/non-numeric format
+- Must exist in database (no additional filters applied)
+
+### Position Category Integration Patterns
+
+**Typical Integration Workflow:**
+```javascript
+// 1. Start with autocomplete for position selection
+async function searchPositions(term, industrySlug = null) {
+    const params = new URLSearchParams({q: term});
+    if (industrySlug) params.append('industry', industrySlug);
+    
+    const response = await fetch(`/api/v1/position-categories/autocomplete?${params}`);
+    return response.json();
+}
+
+// 2. Browse positions by industry
+async function browsePositions(industrySlug, filters = {}) {
+    const params = new URLSearchParams({
+        industry: industrySlug,
+        per_page: 25,
+        status: 'active',
+        ...filters
+    });
+    
+    const response = await fetch(`/api/v1/position-categories?${params}`);
+    return response.json();
+}
+
+// 3. Get full position details
+async function getPositionDetails(idOrSlug) {
+    const response = await fetch(`/api/v1/position-categories/${idOrSlug}`);
+    return response.json();
+}
+```
+
+**Common Usage Scenarios:**
+
+**Scenario 1: Wage Report Submission Form**
+```javascript
+// User selects industry, then position
+const positions = await searchPositions('server', 'restaurants');
+// Returns: [{"id": 1, "name": "Server", "slug": "server-restaurants", "industry_name": "Restaurants"}]
+
+// User selects position from autocomplete, get full details for confirmation
+const position = await getPositionDetails('server-restaurants');
+// Returns complete position data with full description
+```
+
+**Scenario 2: Industry-Specific Position Browsing**  
+```javascript
+// Browse all positions in retail industry
+const retailPositions = await browsePositions('retail', {
+    per_page: 50,
+    status: 'active'
+});
+
+// User can paginate through all retail positions
+```
+
+**Scenario 3: Position Search with Filtering**
+```javascript
+// Search across all industries  
+const searchResults = await fetch('/api/v1/position-categories?q=manager&status=active')
+    .then(res => res.json());
+
+// Returns positions containing "manager" from all industries
+```
+
+### Caching Strategy
+
+**Cache Version Management:**
+- Base version key: `position-categories:ver`
+- Increments automatically when any position category changes
+- All position category caches invalidated when version increments
+
+**Cache Key Patterns:**
+```php
+// Index requests
+"position-categories:{version}:index:{hash}"
+// Hash includes all query parameters
+
+// Autocomplete requests  
+"position-categories:{version}:ac:{hash}"
+// Hash includes q, industry, and limit parameters
+
+// Show requests
+"position-categories:{version}:show:{idOrSlug}"
+// Separate cache entry per ID or slug
+```
+
+**Cache Invalidation Triggers:**
+- Position category created, updated, or deleted
+- Status changes (active/inactive)
+- Industry assignment changes
+- Position name or description changes
+
+**Performance Optimizations:**
+- Eager loads `industry` relationship to prevent N+1 queries
+- Database indexes on commonly filtered fields (`industry_id`, `status`, `name`)
+- Paginated responses for large result sets
+- Minimal payload for autocomplete endpoint
 
 ---
 

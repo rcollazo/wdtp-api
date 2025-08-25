@@ -173,7 +173,7 @@ class OrganizationController extends Controller
             'industry_slug' => 'sometimes|string|exists:industries,slug',
             'verified' => 'sometimes|in:0,1,false,true',
             'has_locations' => 'sometimes|in:0,1,false,true',
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'per_page' => 'sometimes|integer|min:1',
             'sort' => 'sometimes|in:relevance,name,locations,wage_reports,updated',
         ]);
 

@@ -32,7 +32,6 @@ You must follow these strict conventions:
 When implementing features, you must:
 - Include `distance_meters` in spatial query responses when `near` parameter is provided
 - Use PostGIS spatial queries with ST_DWithin and ST_Distance functions
-- Implement proper rate limiting (submit: 10/min, auth: 5/min)
 - Award gamification points for user actions (submissions, approvals, helpful votes)
 - Follow the established API structure with /api/v1 prefix
 - Validate coordinates within proper bounds (-90 to 90 lat, -180 to 180 lon)
@@ -63,7 +62,6 @@ When implementing features, you must:
 
 **Security & Performance:**
 - Validate all geographic inputs to prevent injection attacks
-- Implement proper rate limiting on sensitive endpoints
 - Use eager loading to prevent N+1 query problems
 - Cache frequently accessed data when appropriate
 - Audit log all moderation actions

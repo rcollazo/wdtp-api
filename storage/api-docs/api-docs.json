@@ -467,6 +467,244 @@
                 }
             }
         },
+        "/api/v1/position-categories": {
+            "get": {
+                "tags": [
+                    "Position Categories"
+                ],
+                "summary": "List position categories",
+                "description": "Get position categories with optional industry filtering and search",
+                "operationId": "b1e11dc8373be207a854bf4d2b658bcd",
+                "parameters": [
+                    {
+                        "name": "industry",
+                        "in": "query",
+                        "description": "Filter by industry ID or slug",
+                        "required": false,
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                {
+                                    "type": "string",
+                                    "example": "restaurants"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search term for position name or description (case-insensitive)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "example": "server"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status (defaults to active only)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "active",
+                            "enum": [
+                                "active",
+                                "inactive",
+                                "all"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Position categories retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PositionCategory"
+                                            }
+                                        },
+                                        "links": {
+                                            "description": "Pagination links",
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "description": "Pagination metadata",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/v1/position-categories/autocomplete": {
+            "get": {
+                "tags": [
+                    "Position Categories"
+                ],
+                "summary": "Position category autocomplete search",
+                "description": "Fast search for position categories with minimal response payload",
+                "operationId": "366e21ab1f5dbeba297cb7133f9cc6d4",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search term (minimum 2 characters)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "example": "server"
+                        }
+                    },
+                    {
+                        "name": "industry",
+                        "in": "query",
+                        "description": "Filter by industry ID or slug",
+                        "required": false,
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                {
+                                    "type": "string",
+                                    "example": "restaurants"
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Maximum number of results",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10,
+                            "maximum": 50,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Autocomplete results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 2
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Server"
+                                            },
+                                            "slug": {
+                                                "type": "string",
+                                                "example": "server-restaurants"
+                                            },
+                                            "industry_name": {
+                                                "type": "string",
+                                                "example": "Restaurants"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error - missing or invalid parameters"
+                    }
+                }
+            }
+        },
+        "/api/v1/position-categories/{idOrSlug}": {
+            "get": {
+                "tags": [
+                    "Position Categories"
+                ],
+                "summary": "Get single position category",
+                "description": "Retrieve a specific position category by ID or slug with relationships",
+                "operationId": "e27621f8d4a287d7e1f8157a8dccb5b9",
+                "parameters": [
+                    {
+                        "name": "idOrSlug",
+                        "in": "path",
+                        "description": "Position Category ID (integer) or slug (string)",
+                        "required": true,
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                {
+                                    "type": "string",
+                                    "example": "server-restaurants"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Position category retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PositionCategory"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Position category not found"
+                    }
+                }
+            }
+        },
         "/api/v1/auth/register": {
             "post": {
                 "tags": [
@@ -1266,6 +1504,62 @@
                 },
                 "type": "object"
             },
+            "PositionCategory": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 120,
+                        "example": "Server"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "server-restaurants"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Takes customer orders, serves food and beverages",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "inactive"
+                        ],
+                        "example": "active"
+                    },
+                    "industry": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Restaurants"
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "restaurants"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "User": {
                 "title": "User",
                 "description": "User model",
@@ -1495,6 +1789,10 @@
         {
             "name": "Organizations",
             "description": "Organizations"
+        },
+        {
+            "name": "Position Categories",
+            "description": "Position Categories"
         }
     ]
 }

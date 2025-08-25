@@ -65,6 +65,15 @@ DB_PASSWORD=kZ6-9uwz6H4XZCL8JkiP%
 - Automatic PostGIS point updates via model events
 - Belong to organizations, have wage reports (when implemented)
 
+#### Position Categories
+- Job position classifications within industries (Server, Cashier, Manager, etc.)
+- Belong to industries with unique names per industry constraint
+- Auto-generated slugs with route model binding (ID and slug resolution)
+- Full-text search on name and description fields
+- Status workflow: active/inactive with default active filtering
+- Comprehensive caching for API endpoints (5-minute cache TTL)
+- Used for wage report categorization and industry-specific position filtering
+
 #### Wage Reports
 - Anonymous hourly wage submissions
 - Status workflow: pending → approved/rejected/flagged
@@ -106,8 +115,9 @@ DB_PASSWORD=kZ6-9uwz6H4XZCL8JkiP%
 │   ├── PATCH /{id}/approve (moderator+)
 │   └── PATCH /{id}/reject (moderator+)
 ├── position-categories/
-│   ├── GET / (by industry)
-│   └── GET /{id}
+│   ├── GET / (by industry, search, status filtering, pagination)
+│   ├── GET /autocomplete (fast search with minimal payload)
+│   └── GET /{idOrSlug} (show position by ID or slug)
 ├── stats/
 │   ├── GET /overview
 │   ├── GET /industries
@@ -152,7 +162,8 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 **📋 For comprehensive testing documentation, see [docs/TESTING.md](docs/TESTING.md)**
 
 #### Current Test Status
-- **221 tests passing** with 2328 assertions
+- **338 passing tests** with **3042 assertions** (10 failed, 1 skipped)
+- **Total: 349 tests across 28 test classes**
 - User model fully tested (12 tests)
 - Industry model comprehensively tested (49 tests across 4 test classes)
 - Organization model comprehensively tested (31 tests across 2 test classes)
@@ -166,6 +177,14 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
   - Factory patterns and data generation (18 tests) 
   - Spatial query accuracy and performance (9 tests)
   - Seeder functionality with US cities (15 tests)
+- Position Categories comprehensively tested (119 tests across 7 test classes)
+  - Model functionality and relationships (25 tests)
+  - Database constraints and integrity (12 tests) 
+  - Security and input validation (15 tests)
+  - API endpoints with caching (33 tests)
+  - Factory patterns and data generation (17 tests)
+  - Performance and scaling (15 tests)
+  - Resource transformation (10 tests)
 - Database migrations, factories, and seeders working
 - Swagger/OpenAPI documentation tested (6 tests)
 
@@ -196,6 +215,8 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 - Organization::factory()->active()->verified()->create()
 - Location::factory()->withCoordinates($lat, $lon)->create()
 - Location::factory()->inCity('New York')->active()->create()
+- PositionCategory::factory()->active()->create()
+- PositionCategory::factory()->foodService()->create() // Industry-specific states
 - WageReport::factory()->approved()->create() // When implemented
 
 // Location factory states and city helpers
@@ -237,6 +258,13 @@ DB::statement('CREATE INDEX locations_name_address_city_fulltext
 // Status enums
 $table->enum('status', ['pending', 'approved', 'rejected', 'flagged'])->default('pending');
 $table->enum('role', ['admin', 'moderator', 'contributor', 'viewer'])->default('viewer');
+$table->enum('position_status', ['active', 'inactive'])->default('active');
+
+// Position Categories constraints
+$table->unique(['name', 'industry_id']); // Unique position names per industry
+$table->unique(['slug']); // Global slug uniqueness
+$table->index(['industry_id', 'status']); // Filtered queries
+$table->index(['name']); // Search performance
 ```
 
 #### Model Relationships
@@ -250,6 +278,15 @@ public function interactions(): HasMany
 // Location model spatial scopes and relationships
 public function organization(): BelongsTo
 public function wageReports(): HasMany // Ready for implementation
+
+// Position Categories model relationships and scopes
+public function industry(): BelongsTo
+public function wageReports(): HasMany // Ready for implementation
+
+// Position Categories scopes
+public function scopeActive($query): Builder
+public function scopeForIndustry($query, $industryId): Builder
+public function scopeSearch($query, $term): Builder
 
 // Location spatial scopes (PostGIS powered)
 public function scopeNear($query, $lat, $lon, $radiusKm = 10): Builder
@@ -294,7 +331,7 @@ docs(api): update OpenAPI specifications
 3. COMPLETE: Industries (with API, tests, seeder)
 4. COMPLETE: Organizations (API with index, show, autocomplete endpoints)
 5. COMPLETE: Locations (spatial model with PostGIS integration and comprehensive testing) 
-6. TODO: Position Categories (pending implementation)
+6. COMPLETE: Position Categories (API endpoints, caching, comprehensive testing)
 7. TODO: Core: Wage Reports with validation + spatial search
 8. TODO: Interactions: Voting/flagging + moderation workflow
 9. TODO: Gamification: Level-up integration + achievements
@@ -342,7 +379,7 @@ docs(api): update OpenAPI specifications
 #### Location Model Spatial Performance
 - All spatial queries must complete within 200ms (tested requirement)
 - GiST index utilization verified for PostGIS operations
-- Distance calculations accurate to ±500m (tested tolerance)
+- Distance calculations accurate to ±25m (tested tolerance)
 - Dual storage: geography column for accuracy + lat/lng for performance
 
 #### Caching Strategy

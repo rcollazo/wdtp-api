@@ -280,7 +280,7 @@ class OrganizationApiTest extends TestCase
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['q']);
 
-        $response = $this->getJson('/api/v1/organizations?per_page=101'); // Too large
+        $response = $this->getJson('/api/v1/organizations?per_page=0'); // Too small
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['per_page']);

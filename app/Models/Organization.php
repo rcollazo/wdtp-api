@@ -53,13 +53,10 @@ class Organization extends Model
 
     /**
      * Get all locations for this organization.
-     *
-     * Note: This relationship will be fully functional when Location model is implemented.
      */
     public function locations(): HasMany
     {
-        // Using string reference to avoid class not found error until Location model exists
-        return $this->hasMany('App\Models\Location');
+        return $this->hasMany(Location::class);
     }
 
     /**
