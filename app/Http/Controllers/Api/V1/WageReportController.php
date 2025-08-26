@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreWageReportRequest;
 use App\Http\Resources\WageReportListItemResource;
 use App\Http\Resources\WageReportResource;
+use App\Http\Resources\WageStatisticsResource;
 use App\Models\WageReport;
+use App\Services\WageStatisticsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Response;
 
 /**
  * @OA\Tag(
@@ -18,6 +22,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class WageReportController extends Controller
 {
+    public function __construct(private WageStatisticsService $statisticsService) {}
+
     /**
      * @OA\Get(
      *     path="/api/v1/wage-reports",
@@ -191,7 +197,7 @@ class WageReportController extends Controller
                     [$lat, $lng] = explode(',', $value);
                     $lat = (float) $lat;
                     $lng = (float) $lng;
-                    
+
                     if ($lat < -90 || $lat > 90 || $lng < -180 || $lng > 180) {
                         $fail('Latitude must be between -90 and 90, longitude between -180 and 180');
                     }
@@ -320,6 +326,372 @@ class WageReportController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/wage-reports/stats",
+     *     summary="Get global wage statistics",
+     *     description="Retrieve comprehensive wage statistics with optional filtering",
+     *     tags={"Wage Reports"},
+     *
+     *     @OA\Parameter(
+     *         name="date_from",
+     *         in="query",
+     *         description="Filter by effective date from (YYYY-MM-DD)",
+     *         required=false,
+     *
+     *         @OA\Schema(type="string", format="date", example="2024-01-01")
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="date_to",
+     *         in="query",
+     *         description="Filter by effective date to (YYYY-MM-DD)",
+     *         required=false,
+     *
+     *         @OA\Schema(type="string", format="date", example="2024-12-31")
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="employment_type",
+     *         in="query",
+     *         description="Filter by employment type",
+     *         required=false,
+     *
+     *         @OA\Schema(type="string", enum={"full_time", "part_time", "seasonal", "contract"})
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="position_category_id",
+     *         in="query",
+     *         description="Filter by position category ID",
+     *         required=false,
+     *
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="min_wage",
+     *         in="query",
+     *         description="Minimum hourly wage in dollars",
+     *         required=false,
+     *
+     *         @OA\Schema(type="number", format="float", example=15.00)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="max_wage",
+     *         in="query",
+     *         description="Maximum hourly wage in dollars",
+     *         required=false,
+     *
+     *         @OA\Schema(type="number", format="float", example=50.00)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="currency",
+     *         in="query",
+     *         description="Currency code filter",
+     *         required=false,
+     *
+     *         @OA\Schema(type="string", example="USD", default="USD")
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="unionized",
+     *         in="query",
+     *         description="Filter by unionization status",
+     *         required=false,
+     *
+     *         @OA\Schema(type="boolean", example=true)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="tips_included",
+     *         in="query",
+     *         description="Filter by whether tips are included",
+     *         required=false,
+     *
+     *         @OA\Schema(type="boolean", example=false)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Global wage statistics including percentiles and breakdowns",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="data", ref="#/components/schemas/WageStatistics")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=422, description="Validation error"),
+     *     @OA\Response(response=500, description="Server error")
+     * )
+     */
+    public function stats(Request $request): JsonResource
+    {
+        // Validate query parameters
+        $request->validate([
+            'date_from' => 'sometimes|date|before_or_equal:date_to',
+            'date_to' => 'sometimes|date|after_or_equal:date_from',
+            'employment_type' => 'sometimes|in:full_time,part_time,seasonal,contract',
+            'position_category_id' => 'sometimes|integer|exists:position_categories,id',
+            'min_wage' => 'sometimes|numeric|min:0',
+            'max_wage' => 'sometimes|numeric|min:0|gt:min_wage',
+            'currency' => 'sometimes|string|size:3',
+            'unionized' => 'sometimes|boolean',
+            'tips_included' => 'sometimes|boolean',
+        ]);
+
+        // Build filters array
+        $filters = [];
+
+        if ($request->filled('date_from')) {
+            $filters['date_from'] = $request->date_from;
+        }
+
+        if ($request->filled('date_to')) {
+            $filters['date_to'] = $request->date_to;
+        }
+
+        if ($request->filled('employment_type')) {
+            $filters['employment_type'] = $request->employment_type;
+        }
+
+        if ($request->filled('position_category_id')) {
+            $filters['position_category_id'] = $request->position_category_id;
+        }
+
+        if ($request->filled('min_wage')) {
+            $filters['min_wage_cents'] = (int) ($request->min_wage * 100);
+        }
+
+        if ($request->filled('max_wage')) {
+            $filters['max_wage_cents'] = (int) ($request->max_wage * 100);
+        }
+
+        if ($request->filled('currency')) {
+            $filters['currency'] = strtoupper($request->currency);
+        }
+
+        if ($request->has('unionized')) {
+            $filters['unionized'] = $request->boolean('unionized');
+        }
+
+        if ($request->has('tips_included')) {
+            $filters['tips_included'] = $request->boolean('tips_included');
+        }
+
+        $statistics = $this->statisticsService->getGlobalStatistics($filters);
+
+        return new WageStatisticsResource($statistics);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/v1/wage-reports",
+     *     summary="Submit a new wage report",
+     *     tags={"Wage Reports"},
+     *
+     *     @OA\RequestBody(
+     *         required=true,
+     *         description="Wage report submission data",
+     *
+     *         @OA\JsonContent(
+     *             required={"location_id", "position_category_id", "wage_amount", "wage_type", "employment_type"},
+     *
+     *             @OA\Property(
+     *                 property="location_id",
+     *                 type="integer",
+     *                 description="ID of the location where work is performed",
+     *                 example=1
+     *             ),
+     *             @OA\Property(
+     *                 property="position_category_id",
+     *                 type="integer",
+     *                 description="ID of the position category/job type",
+     *                 example=1
+     *             ),
+     *             @OA\Property(
+     *                 property="wage_amount",
+     *                 type="number",
+     *                 format="float",
+     *                 description="Wage amount in dollars",
+     *                 example=15.50,
+     *                 minimum=1,
+     *                 maximum=999999.99
+     *             ),
+     *             @OA\Property(
+     *                 property="wage_type",
+     *                 type="string",
+     *                 description="Wage payment period",
+     *                 enum={"hourly", "weekly", "biweekly", "monthly", "yearly", "per_shift"},
+     *                 example="hourly"
+     *             ),
+     *             @OA\Property(
+     *                 property="employment_type",
+     *                 type="string",
+     *                 description="Type of employment arrangement",
+     *                 enum={"full_time", "part_time", "contract", "seasonal"},
+     *                 example="part_time"
+     *             ),
+     *             @OA\Property(
+     *                 property="years_experience",
+     *                 type="integer",
+     *                 description="Years of experience in this role (optional)",
+     *                 example=2,
+     *                 minimum=0,
+     *                 maximum=50,
+     *                 nullable=true
+     *             ),
+     *             @OA\Property(
+     *                 property="hours_per_week",
+     *                 type="integer",
+     *                 description="Average hours worked per week (optional)",
+     *                 example=30,
+     *                 minimum=1,
+     *                 maximum=168,
+     *                 nullable=true
+     *             ),
+     *             @OA\Property(
+     *                 property="effective_date",
+     *                 type="string",
+     *                 format="date",
+     *                 description="Date when this wage became effective (optional, defaults to today)",
+     *                 example="2024-08-01",
+     *                 nullable=true
+     *             ),
+     *             @OA\Property(
+     *                 property="tips_included",
+     *                 type="boolean",
+     *                 description="Whether tips are included in the wage amount (optional)",
+     *                 example=false,
+     *                 nullable=true
+     *             ),
+     *             @OA\Property(
+     *                 property="unionized",
+     *                 type="boolean",
+     *                 description="Whether the position is unionized (optional)",
+     *                 example=true,
+     *                 nullable=true
+     *             ),
+     *             @OA\Property(
+     *                 property="additional_notes",
+     *                 type="string",
+     *                 description="Additional notes or context about the wage (optional)",
+     *                 example="Includes health benefits and 401k matching",
+     *                 maxLength=1000,
+     *                 nullable=true
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=201,
+     *         description="Wage report created successfully",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="data",
+     *                 ref="#/components/schemas/WageReport"
+     *             ),
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="Wage report submitted successfully"
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="message",
+     *                 type="string",
+     *                 example="The given data was invalid."
+     *             ),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="wage_amount",
+     *                     type="array",
+     *
+     *                     @OA\Items(
+     *                         type="string",
+     *                         example="The wage amount is required."
+     *                     )
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="location_id",
+     *                     type="array",
+     *
+     *                     @OA\Items(
+     *                         type="string",
+     *                         example="The selected location does not exist."
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error during submission"
+     *     )
+     * )
+     */
+    public function store(StoreWageReportRequest $request)
+    {
+        try {
+            // Get formatted data from the form request
+            $wageReportData = $request->getWageReportData();
+
+            // Create the wage report - the observer will handle:
+            // - Deriving organization_id from location
+            // - Normalizing wage to hourly cents
+            // - Calculating sanity score
+            // - Setting status (approved/pending)
+            // - Awarding XP points to authenticated users
+            // - Updating counters for location/organization
+            $wageReport = WageReport::create($wageReportData);
+
+            // Load relationships for response
+            $wageReport->load(['location', 'organization', 'positionCategory']);
+
+            // Return success response with created resource
+            return (new WageReportResource($wageReport))
+                ->additional([
+                    'message' => 'Wage report submitted successfully',
+                ])
+                ->response()
+                ->setStatusCode(Response::HTTP_CREATED);
+
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Error creating wage report', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'request_data' => $request->validated(),
+            ]);
+
+            // Return generic error response
+            return response()->json([
+                'message' => 'An error occurred while submitting your wage report. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : null,
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Apply sorting to the query based on the sort parameter.
      */
     private function applySorting($query, string $sort, ?float $lat = null, ?float $lng = null): void
@@ -340,8 +712,8 @@ class WageReportController extends Controller
     private function applySpatialSort($query, ?float $lat, ?float $lng): void
     {
         if ($lat !== null && $lng !== null) {
-            // The nearby scope already orders by distance, but if we need to reorder
-            $query->orderByDistance($lat, $lng);
+            // The nearby scope already orders by distance, so we don't need to apply additional sorting
+            // The query is already ordered by ST_Distance() in the nearby scope
         } else {
             // Fallback to recent if no coordinates provided
             $query->latest('created_at');

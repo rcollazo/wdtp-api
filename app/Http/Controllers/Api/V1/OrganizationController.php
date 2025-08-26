@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrganizationListItemResource;
 use App\Http\Resources\OrganizationResource;
+use App\Http\Resources\WageStatisticsResource;
 use App\Models\Organization;
+use App\Services\WageStatisticsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -64,6 +66,8 @@ use Illuminate\Support\Facades\Cache;
  */
 class OrganizationController extends Controller
 {
+    public function __construct(private WageStatisticsService $statisticsService) {}
+
     /**
      * @OA\Get(
      *     path="/api/v1/organizations",
@@ -297,6 +301,66 @@ class OrganizationController extends Controller
         });
 
         return new OrganizationResource($organization);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/organizations/{idOrSlug}/wage-stats",
+     *     summary="Get wage statistics for organization",
+     *     description="Retrieve wage statistics across all locations for a specific organization",
+     *     tags={"Organizations"},
+     *
+     *     @OA\Parameter(
+     *         name="idOrSlug",
+     *         in="path",
+     *         description="Organization ID (integer) or slug (string)",
+     *         required=true,
+     *
+     *         @OA\Schema(
+     *             oneOf={
+     *                 @OA\Schema(type="integer", example=1),
+     *                 @OA\Schema(type="string", example="starbucks")
+     *             }
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Organization wage statistics",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="data", ref="#/components/schemas/WageStatistics")
+     *         )
+     *     ),
+     *
+     *     @OA\Response(response=404, description="Organization not found"),
+     *     @OA\Response(response=422, description="No wage data available for this organization")
+     * )
+     */
+    public function wageStats(string $idOrSlug): JsonResource
+    {
+        // First, find the organization to get its ID
+        $organization = Organization::query()
+            ->defaultFilters()
+            ->where(function ($query) use ($idOrSlug) {
+                if (is_numeric($idOrSlug)) {
+                    $query->where('id', $idOrSlug);
+                } else {
+                    $query->where('slug', $idOrSlug);
+                }
+            })
+            ->firstOrFail();
+
+        $statistics = $this->statisticsService->getOrganizationStatistics($organization->id);
+
+        // Return 422 if no wage data available
+        if ($statistics['count'] === 0) {
+            abort(422, 'No wage data available for this organization');
+        }
+
+        return new WageStatisticsResource($statistics);
     }
 
     /**

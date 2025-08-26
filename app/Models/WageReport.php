@@ -25,6 +25,7 @@ class WageReport extends Model
         'user_id',
         'organization_id',
         'location_id',
+        'position_category_id',
         'job_title',
         'employment_type',
         'wage_period',
@@ -70,6 +71,11 @@ class WageReport extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
+    }
+
+    public function positionCategory(): BelongsTo
+    {
+        return $this->belongsTo(PositionCategory::class);
     }
 
     /**

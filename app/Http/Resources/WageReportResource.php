@@ -25,6 +25,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *     @OA\Property(property="created_at", type="string", format="datetime"),
  *     @OA\Property(property="location", ref="#/components/schemas/Location"),
  *     @OA\Property(property="organization", ref="#/components/schemas/Organization"),
+ *     @OA\Property(property="position_category", ref="#/components/schemas/PositionCategory"),
  *     @OA\Property(property="original_amount_money", type="string"),
  *     @OA\Property(property="normalized_hourly_money", type="string"),
  *     @OA\Property(property="distance_meters", type="integer", nullable=true)
@@ -58,6 +59,7 @@ class WageReportResource extends JsonResource
             // Relationships
             'location' => new LocationResource($this->whenLoaded('location')),
             'organization' => new OrganizationResource($this->whenLoaded('organization')),
+            'position_category' => new PositionCategoryResource($this->whenLoaded('positionCategory')),
 
             // Computed fields
             'original_amount_money' => $this->originalAmountMoney(),

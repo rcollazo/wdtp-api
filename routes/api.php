@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\IndustryController;
+use App\Http\Controllers\Api\V1\LocationController;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\PositionCategoryController;
 use App\Http\Controllers\Api\V1\WageReportController;
@@ -31,13 +32,19 @@ Route::prefix('v1')->group(function () {
     Route::get('organizations', [OrganizationController::class, 'index']);
     Route::get('organizations/autocomplete', [OrganizationController::class, 'autocomplete']);
     Route::get('organizations/{idOrSlug}', [OrganizationController::class, 'show']);
+    Route::get('organizations/{idOrSlug}/wage-stats', [OrganizationController::class, 'wageStats']);
 
     // Position Categories endpoints
     Route::get('position-categories', [PositionCategoryController::class, 'index']);
     Route::get('position-categories/autocomplete', [PositionCategoryController::class, 'autocomplete']);
     Route::get('position-categories/{idOrSlug}', [PositionCategoryController::class, 'show']);
 
-    // Wage Reports endpoints (public read access)
+    // Locations endpoints
+    Route::get('locations/{locationId}/wage-stats', [LocationController::class, 'wageStats']);
+
+    // Wage Reports endpoints (public read and write access)
     Route::get('wage-reports', [WageReportController::class, 'index']);
+    Route::get('wage-reports/stats', [WageReportController::class, 'stats']);
+    Route::post('wage-reports', [WageReportController::class, 'store'])->middleware('throttle:wage-reports');
     Route::get('wage-reports/{wageReportId}', [WageReportController::class, 'show']);
 });

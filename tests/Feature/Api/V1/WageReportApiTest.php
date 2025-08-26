@@ -53,40 +53,49 @@ class WageReportApiTest extends TestCase
             'currency' => 'USD',
         ]);
 
-        // Create pending wage report (should not appear)
-        WageReport::factory()->pending()->create([
+        // Create pending wage report (should not appear) - manually set status after creation
+        $pendingReport = WageReport::factory()->make([
             'organization_id' => $this->organization->id,
             'location_id' => $this->location->id,
+            'wage_period' => 'hourly',
+            'amount_cents' => 1200, // $12.00/hour - reasonable wage
+            'normalized_hourly_cents' => 1200,
+            'status' => 'pending',
         ]);
+
+        // Save without observer to maintain pending status
+        WageReport::withoutEvents(function () use ($pendingReport) {
+            $pendingReport->save();
+        });
 
         $response = $this->getJson('/api/v1/wage-reports');
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data') // Only approved report should appear
             ->assertJsonStructure([
-            'data' => [
-                '*' => [
-                    'id',
-                    'job_title',
-                    'employment_type_display',
-                    'normalized_hourly_money',
-                    'currency',
-                    'location' => [
+                'data' => [
+                    '*' => [
                         'id',
-                        'name',
-                        'city',
-                        'state_province',
-                    ],
-                    'organization' => [
-                        'id',
-                        'name',
-                        'slug',
+                        'job_title',
+                        'employment_type_display',
+                        'normalized_hourly_money',
+                        'currency',
+                        'location' => [
+                            'id',
+                            'name',
+                            'city',
+                            'state_province',
+                        ],
+                        'organization' => [
+                            'id',
+                            'name',
+                            'slug',
+                        ],
                     ],
                 ],
-            ],
-            'links',
-            'meta',
-        ]);
+                'links',
+                'meta',
+            ]);
 
         // Check the approved report is included
         $response->assertJsonPath('data.0.id', $approvedReport->id)
@@ -135,10 +144,19 @@ class WageReportApiTest extends TestCase
 
     public function test_cannot_show_pending_wage_report(): void
     {
-        $wageReport = WageReport::factory()->pending()->create([
+        $wageReport = WageReport::factory()->make([
             'organization_id' => $this->organization->id,
             'location_id' => $this->location->id,
+            'wage_period' => 'hourly',
+            'amount_cents' => 1200, // $12.00/hour - reasonable wage
+            'normalized_hourly_cents' => 1200,
+            'status' => 'pending',
         ]);
+
+        // Save without observer to maintain pending status
+        WageReport::withoutEvents(function () use ($wageReport) {
+            $wageReport->save();
+        });
 
         $response = $this->getJson("/api/v1/wage-reports/{$wageReport->id}");
 
@@ -257,10 +275,13 @@ class WageReportApiTest extends TestCase
 
     public function test_pagination_works(): void
     {
-        // Create multiple wage reports
-        WageReport::factory()->approved()->count(30)->create([
+        // Create multiple wage reports with reasonable wages to ensure they get approved
+        WageReport::factory()->count(30)->create([
             'organization_id' => $this->organization->id,
             'location_id' => $this->location->id,
+            'wage_period' => 'hourly',
+            'amount_cents' => 1500, // $15.00/hour - reasonable wage will get positive sanity score
+            'normalized_hourly_cents' => 1500,
         ]);
 
         $response = $this->getJson('/api/v1/wage-reports?per_page=10');

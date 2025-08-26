@@ -43,6 +43,15 @@ class WageReportListItemResource extends JsonResource
                 ];
             }),
 
+            // Minimal position category info
+            'position_category' => $this->whenLoaded('positionCategory', function () {
+                return [
+                    'id' => $this->positionCategory->id,
+                    'name' => $this->positionCategory->name,
+                    'slug' => $this->positionCategory->slug,
+                ];
+            }),
+
             // Include distance if present
             'distance_meters' => $this->when(
                 isset($this->distance_meters),
