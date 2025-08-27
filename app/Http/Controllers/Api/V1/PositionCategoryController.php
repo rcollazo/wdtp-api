@@ -11,25 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Cache;
 
 /**
- * @OA\Schema(
- *     schema="PositionCategory",
- *     type="object",
- *
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", maxLength=120, example="Server"),
- *     @OA\Property(property="slug", type="string", example="server-restaurants"),
- *     @OA\Property(property="description", type="string", nullable=true, example="Takes customer orders, serves food and beverages"),
- *     @OA\Property(property="status", type="string", enum={"active", "inactive"}, example="active"),
- *     @OA\Property(
- *         property="industry",
- *         type="object",
- *         @OA\Property(property="id", type="integer", example=1),
- *         @OA\Property(property="name", type="string", example="Restaurants"),
- *         @OA\Property(property="slug", type="string", example="restaurants")
- *     ),
- *     @OA\Property(property="created_at", type="string", format="date-time"),
- *     @OA\Property(property="updated_at", type="string", format="date-time")
- * )
+ * Position Categories API Controller
  */
 class PositionCategoryController extends Controller
 {

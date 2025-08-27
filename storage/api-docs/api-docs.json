@@ -226,6 +226,51 @@
                 }
             }
         },
+        "/api/v1/locations/{locationId}/wage-stats": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get wage statistics for location",
+                "description": "Retrieve wage statistics for a specific location",
+                "operationId": "aaa40a8b26582121a12644f2e107e578",
+                "parameters": [
+                    {
+                        "name": "locationId",
+                        "in": "path",
+                        "description": "Location ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Location wage statistics",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WageStatistics"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Location not found"
+                    },
+                    "422": {
+                        "description": "No wage data available for this location"
+                    }
+                }
+            }
+        },
         "/api/v1/organizations": {
             "get": {
                 "tags": [
@@ -395,6 +440,59 @@
                     },
                     "404": {
                         "description": "Organization not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/organizations/{idOrSlug}/wage-stats": {
+            "get": {
+                "tags": [
+                    "Organizations"
+                ],
+                "summary": "Get wage statistics for organization",
+                "description": "Retrieve wage statistics across all locations for a specific organization",
+                "operationId": "1a466890359c8f4f3a3503ce92860d4e",
+                "parameters": [
+                    {
+                        "name": "idOrSlug",
+                        "in": "path",
+                        "description": "Organization ID (integer) or slug (string)",
+                        "required": true,
+                        "schema": {
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                {
+                                    "type": "string",
+                                    "example": "starbucks"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Organization wage statistics",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WageStatistics"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Organization not found"
+                    },
+                    "422": {
+                        "description": "No wage data available for this organization"
                     }
                 }
             }
@@ -701,6 +799,559 @@
                     },
                     "404": {
                         "description": "Position category not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/wage-reports": {
+            "get": {
+                "tags": [
+                    "Wage Reports"
+                ],
+                "summary": "List wage reports with filtering and pagination",
+                "operationId": "c3a9ba5b46ba52d9a8e51ce177ccbea2",
+                "parameters": [
+                    {
+                        "name": "organization_id",
+                        "in": "query",
+                        "description": "Filter by organization ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "organization_slug",
+                        "in": "query",
+                        "description": "Filter by organization slug",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "starbucks"
+                        }
+                    },
+                    {
+                        "name": "location_id",
+                        "in": "query",
+                        "description": "Filter by location ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "job_title",
+                        "in": "query",
+                        "description": "ILIKE search on job title",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Barista"
+                        }
+                    },
+                    {
+                        "name": "min_hr",
+                        "in": "query",
+                        "description": "Minimum hourly wage in dollars",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 15
+                        }
+                    },
+                    {
+                        "name": "max_hr",
+                        "in": "query",
+                        "description": "Maximum hourly wage in dollars",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 25
+                        }
+                    },
+                    {
+                        "name": "since",
+                        "in": "query",
+                        "description": "Effective date filter (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2024-01-01"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "approved",
+                            "enum": [
+                                "approved",
+                                "pending",
+                                "rejected"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "employment_type",
+                        "in": "query",
+                        "description": "Filter by employment type",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "full_time",
+                                "part_time",
+                                "seasonal",
+                                "contract"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "description": "Currency code filter",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "USD",
+                            "example": "USD"
+                        }
+                    },
+                    {
+                        "name": "near",
+                        "in": "query",
+                        "description": "Latitude,longitude for spatial search",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "40.7128,-74.0060"
+                        }
+                    },
+                    {
+                        "name": "radius_km",
+                        "in": "query",
+                        "description": "Search radius in kilometers (requires near parameter)",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "default": 10,
+                            "maximum": 100
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort order",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "recent",
+                            "enum": [
+                                "recent",
+                                "oldest",
+                                "highest",
+                                "lowest",
+                                "closest"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of wage reports",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WageReport"
+                                            }
+                                        },
+                                        "links": {
+                                            "description": "Pagination links",
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "description": "Pagination metadata",
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Wage Reports"
+                ],
+                "summary": "Submit a new wage report",
+                "operationId": "33eb2651c3d41b09856c7c8cfab77c8f",
+                "requestBody": {
+                    "description": "Wage report submission data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "location_id",
+                                    "position_category_id",
+                                    "wage_amount",
+                                    "wage_type",
+                                    "employment_type"
+                                ],
+                                "properties": {
+                                    "location_id": {
+                                        "description": "ID of the location where work is performed",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "position_category_id": {
+                                        "description": "ID of the position category/job type",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "wage_amount": {
+                                        "description": "Wage amount in dollars",
+                                        "type": "number",
+                                        "format": "float",
+                                        "maximum": 999999.99,
+                                        "minimum": 1,
+                                        "example": 15.5
+                                    },
+                                    "wage_type": {
+                                        "description": "Wage payment period",
+                                        "type": "string",
+                                        "enum": [
+                                            "hourly",
+                                            "weekly",
+                                            "biweekly",
+                                            "monthly",
+                                            "yearly",
+                                            "per_shift"
+                                        ],
+                                        "example": "hourly"
+                                    },
+                                    "employment_type": {
+                                        "description": "Type of employment arrangement",
+                                        "type": "string",
+                                        "enum": [
+                                            "full_time",
+                                            "part_time",
+                                            "contract",
+                                            "seasonal"
+                                        ],
+                                        "example": "part_time"
+                                    },
+                                    "years_experience": {
+                                        "description": "Years of experience in this role (optional)",
+                                        "type": "integer",
+                                        "maximum": 50,
+                                        "minimum": 0,
+                                        "example": 2,
+                                        "nullable": true
+                                    },
+                                    "hours_per_week": {
+                                        "description": "Average hours worked per week (optional)",
+                                        "type": "integer",
+                                        "maximum": 168,
+                                        "minimum": 1,
+                                        "example": 30,
+                                        "nullable": true
+                                    },
+                                    "effective_date": {
+                                        "description": "Date when this wage became effective (optional, defaults to today)",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-08-01",
+                                        "nullable": true
+                                    },
+                                    "tips_included": {
+                                        "description": "Whether tips are included in the wage amount (optional)",
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
+                                    },
+                                    "unionized": {
+                                        "description": "Whether the position is unionized (optional)",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "additional_notes": {
+                                        "description": "Additional notes or context about the wage (optional)",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Includes health benefits and 401k matching",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Wage report created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WageReport"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Wage report submitted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "wage_amount": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The wage amount is required."
+                                                    }
+                                                },
+                                                "location_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The selected location does not exist."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error during submission"
+                    }
+                }
+            }
+        },
+        "/api/v1/wage-reports/{wageReportId}": {
+            "get": {
+                "tags": [
+                    "Wage Reports"
+                ],
+                "summary": "Show single wage report",
+                "operationId": "906b55971037fa6828a6bdd503fca05d",
+                "parameters": [
+                    {
+                        "name": "wageReportId",
+                        "in": "path",
+                        "description": "Wage report ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Wage report details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WageReport"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Wage report not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/wage-reports/stats": {
+            "get": {
+                "tags": [
+                    "Wage Reports"
+                ],
+                "summary": "Get global wage statistics",
+                "description": "Retrieve comprehensive wage statistics with optional filtering",
+                "operationId": "6bb1c143770e089513cef4c2f64cf729",
+                "parameters": [
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "Filter by effective date from (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2024-01-01"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "Filter by effective date to (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2024-12-31"
+                        }
+                    },
+                    {
+                        "name": "employment_type",
+                        "in": "query",
+                        "description": "Filter by employment type",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "full_time",
+                                "part_time",
+                                "seasonal",
+                                "contract"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "position_category_id",
+                        "in": "query",
+                        "description": "Filter by position category ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "min_wage",
+                        "in": "query",
+                        "description": "Minimum hourly wage in dollars",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 15
+                        }
+                    },
+                    {
+                        "name": "max_wage",
+                        "in": "query",
+                        "description": "Maximum hourly wage in dollars",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 50
+                        }
+                    },
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "description": "Currency code filter",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "USD",
+                            "example": "USD"
+                        }
+                    },
+                    {
+                        "name": "unionized",
+                        "in": "query",
+                        "description": "Filter by unionization status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": true
+                        }
+                    },
+                    {
+                        "name": "tips_included",
+                        "in": "query",
+                        "description": "Filter by whether tips are included",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "example": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Global wage statistics including percentiles and breakdowns",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WageStatistics"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
                 }
             }
@@ -1364,95 +2015,6 @@
                 },
                 "type": "object"
             },
-            "Organization": {
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "name": {
-                        "type": "string",
-                        "maxLength": 120,
-                        "example": "Starbucks"
-                    },
-                    "slug": {
-                        "type": "string",
-                        "example": "starbucks"
-                    },
-                    "legal_name": {
-                        "type": "string",
-                        "maxLength": 255,
-                        "example": "Starbucks Corporation"
-                    },
-                    "domain": {
-                        "type": "string",
-                        "example": "starbucks.com"
-                    },
-                    "website_url": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://starbucks.com"
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "Global coffee chain",
-                        "nullable": true
-                    },
-                    "logo_url": {
-                        "type": "string",
-                        "format": "url",
-                        "example": "https://example.com/logo.png",
-                        "nullable": true
-                    },
-                    "primary_industry": {
-                        "properties": {
-                            "id": {
-                                "type": "integer",
-                                "example": 5
-                            },
-                            "name": {
-                                "type": "string",
-                                "example": "Coffee Shop"
-                            },
-                            "slug": {
-                                "type": "string",
-                                "example": "coffee-shop"
-                            }
-                        },
-                        "type": "object",
-                        "nullable": true
-                    },
-                    "locations_count": {
-                        "type": "integer",
-                        "example": 8450
-                    },
-                    "wage_reports_count": {
-                        "type": "integer",
-                        "example": 2341
-                    },
-                    "is_verified": {
-                        "type": "boolean",
-                        "example": true
-                    },
-                    "verified_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-01-15T10:30:00Z",
-                        "nullable": true
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2023-12-01T08:15:00Z"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-01-15T10:30:00Z"
-                    }
-                },
-                "type": "object"
-            },
             "OrganizationListItem": {
                 "properties": {
                     "id": {
@@ -1504,6 +2066,188 @@
                 },
                 "type": "object"
             },
+            "Location": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Times Square Location"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "times-square-location"
+                    },
+                    "address_line_1": {
+                        "type": "string",
+                        "example": "1234 Main Street"
+                    },
+                    "address_line_2": {
+                        "type": "string",
+                        "example": "Suite 100",
+                        "nullable": true
+                    },
+                    "city": {
+                        "type": "string",
+                        "example": "New York"
+                    },
+                    "state_province": {
+                        "type": "string",
+                        "example": "NY"
+                    },
+                    "postal_code": {
+                        "type": "string",
+                        "example": "10001"
+                    },
+                    "country_code": {
+                        "type": "string",
+                        "example": "US"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "+1-555-123-4567",
+                        "nullable": true
+                    },
+                    "website_url": {
+                        "type": "string",
+                        "example": "https://example.com/location",
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Flagship location in Times Square",
+                        "nullable": true
+                    },
+                    "latitude": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 40.7128
+                    },
+                    "longitude": {
+                        "type": "number",
+                        "format": "float",
+                        "example": -74.006
+                    },
+                    "is_active": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "is_verified": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-08-26T10:30:00Z"
+                    },
+                    "organization": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Organization"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "distance_meters": {
+                        "description": "Distance in meters from search coordinates",
+                        "type": "integer",
+                        "example": 1500,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "Organization": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Starbucks Corporation"
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "starbucks-corporation"
+                    },
+                    "domain": {
+                        "type": "string",
+                        "example": "starbucks.com",
+                        "nullable": true
+                    },
+                    "locations_count": {
+                        "type": "integer",
+                        "example": 150
+                    },
+                    "wage_reports_count": {
+                        "type": "integer",
+                        "example": 42
+                    },
+                    "is_verified": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "primary_industry": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Food Service"
+                            },
+                            "slug": {
+                                "type": "string",
+                                "example": "food-service"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "legal_name": {
+                        "type": "string",
+                        "example": "Starbucks Corporation",
+                        "nullable": true
+                    },
+                    "website_url": {
+                        "type": "string",
+                        "example": "https://www.starbucks.com",
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Global coffeehouse chain",
+                        "nullable": true
+                    },
+                    "logo_url": {
+                        "type": "string",
+                        "example": "https://example.com/logos/starbucks.png",
+                        "nullable": true
+                    },
+                    "verified_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-08-26T10:30:00Z",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-08-26T10:30:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-08-26T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
             "PositionCategory": {
                 "properties": {
                     "id": {
@@ -1512,16 +2256,15 @@
                     },
                     "name": {
                         "type": "string",
-                        "maxLength": 120,
-                        "example": "Server"
+                        "example": "Barista"
                     },
                     "slug": {
                         "type": "string",
-                        "example": "server-restaurants"
+                        "example": "barista"
                     },
                     "description": {
                         "type": "string",
-                        "example": "Takes customer orders, serves food and beverages",
+                        "example": "Prepares and serves coffee drinks",
                         "nullable": true
                     },
                     "status": {
@@ -1540,22 +2283,228 @@
                             },
                             "name": {
                                 "type": "string",
-                                "example": "Restaurants"
+                                "example": "Food Service"
                             },
                             "slug": {
                                 "type": "string",
-                                "example": "restaurants"
+                                "example": "food-service"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-08-26T10:30:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-08-26T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "WageReport": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "job_title": {
+                        "type": "string"
+                    },
+                    "employment_type": {
+                        "type": "string"
+                    },
+                    "employment_type_display": {
+                        "type": "string"
+                    },
+                    "wage_period": {
+                        "type": "string"
+                    },
+                    "wage_period_display": {
+                        "type": "string"
+                    },
+                    "amount_cents": {
+                        "type": "integer"
+                    },
+                    "normalized_hourly_cents": {
+                        "type": "integer"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "hours_per_week": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "effective_date": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "tips_included": {
+                        "type": "boolean"
+                    },
+                    "unionized": {
+                        "type": "boolean",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "datetime"
+                    },
+                    "location": {
+                        "$ref": "#/components/schemas/Location"
+                    },
+                    "organization": {
+                        "$ref": "#/components/schemas/Organization"
+                    },
+                    "position_category": {
+                        "$ref": "#/components/schemas/PositionCategory"
+                    },
+                    "original_amount_money": {
+                        "type": "string"
+                    },
+                    "normalized_hourly_money": {
+                        "type": "string"
+                    },
+                    "distance_meters": {
+                        "type": "integer",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "WageStatistics": {
+                "properties": {
+                    "count": {
+                        "description": "Total number of wage reports",
+                        "type": "integer"
+                    },
+                    "average_cents": {
+                        "description": "Average normalized hourly wage in cents",
+                        "type": "integer"
+                    },
+                    "median_cents": {
+                        "description": "Median normalized hourly wage in cents",
+                        "type": "integer"
+                    },
+                    "min_cents": {
+                        "description": "Minimum normalized hourly wage in cents",
+                        "type": "integer"
+                    },
+                    "max_cents": {
+                        "description": "Maximum normalized hourly wage in cents",
+                        "type": "integer"
+                    },
+                    "std_deviation_cents": {
+                        "description": "Standard deviation in cents",
+                        "type": "integer"
+                    },
+                    "percentiles": {
+                        "properties": {
+                            "p25": {
+                                "description": "25th percentile in cents",
+                                "type": "integer"
+                            },
+                            "p50": {
+                                "description": "50th percentile (median) in cents",
+                                "type": "integer"
+                            },
+                            "p75": {
+                                "description": "75th percentile in cents",
+                                "type": "integer"
+                            },
+                            "p90": {
+                                "description": "90th percentile in cents",
+                                "type": "integer"
                             }
                         },
                         "type": "object"
                     },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time"
+                    "employment_types": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "type": {
+                                    "type": "string"
+                                },
+                                "type_display": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "average_cents": {
+                                    "type": "integer"
+                                }
+                            },
+                            "type": "object"
+                        }
                     },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time"
+                    "job_titles": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "title": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "average_cents": {
+                                    "type": "integer"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "geographic_distribution": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "city": {
+                                    "type": "string"
+                                },
+                                "state": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "integer"
+                                },
+                                "average_cents": {
+                                    "type": "integer"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "display": {
+                        "properties": {
+                            "average": {
+                                "description": "Formatted average wage",
+                                "type": "string"
+                            },
+                            "median": {
+                                "description": "Formatted median wage",
+                                "type": "string"
+                            },
+                            "min": {
+                                "description": "Formatted minimum wage",
+                                "type": "string"
+                            },
+                            "max": {
+                                "description": "Formatted maximum wage",
+                                "type": "string"
+                            },
+                            "std_deviation": {
+                                "description": "Formatted standard deviation",
+                                "type": "string"
+                            }
+                        },
+                        "type": "object"
                     }
                 },
                 "type": "object"
@@ -1774,6 +2723,14 @@
         }
     },
     "tags": [
+        {
+            "name": "Locations",
+            "description": "Location management and wage statistics"
+        },
+        {
+            "name": "Wage Reports",
+            "description": "Anonymous wage report submissions and search"
+        },
         {
             "name": "Authentication",
             "description": "User authentication and authorization endpoints"
