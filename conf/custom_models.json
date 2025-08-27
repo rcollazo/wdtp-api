@@ -1,0 +1,104 @@
+{
+  "models": [
+    {
+      "model_name": "deepseek/deepseek-r1:free",
+      "aliases": ["deepseek-r1-free", "ds-r1-free", "planner-r1"],
+      "context_window": 163840,
+      "max_output_tokens": 163840,
+      "supports_extended_thinking": true,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "description": "DeepSeek R1 (free). Large RL-reasoner for hard planning/consensus."
+    },
+    {
+      "model_name": "deepseek/deepseek-r1-0528:free",
+      "aliases": ["deepseek-r1-0528-free", "ds-r1-0528-free", "planner-r1-0528"],
+      "context_window": 163840,
+      "max_output_tokens": 163840,
+      "supports_extended_thinking": true,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "description": "DeepSeek R1 (0528 refresh). Faster/cleaner reasoning variant for planning."
+    },
+    {
+      "model_name": "tngtech/deepseek-r1t2-chimera:free",
+      "aliases": ["r1t2-chimera-free", "tng-r1t2", "fast-planner"],
+      "context_window": 163840,
+      "max_output_tokens": 163840,
+      "supports_extended_thinking": true,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "description": "TNG DeepSeek R1T2 Chimera. Assembly-of-Experts merge ~20% faster than R1."
+    },
+    {
+      "model_name": "tngtech/deepseek-r1t-chimera:free",
+      "aliases": ["r1t-chimera-free", "tng-r1t", "latency-planner"],
+      "context_window": 163840,
+      "max_output_tokens": 163840,
+      "supports_extended_thinking": true,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "description": "TNG DeepSeek R1T Chimera. Balanced R1 reasoning + V3 efficiency."
+    },
+    {
+      "model_name": "deepseek/deepseek-chat-v3-0324:free",
+      "aliases": ["deepseek-v3-0324-free", "ds-v3", "consensus-generalist"],
+      "context_window": 163840,
+      "max_output_tokens": 163840,
+      "supports_extended_thinking": false,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "description": "DeepSeek V3 0324 (free). Strong generalist for code walkthroughs and reviews."
+    },
+    {
+      "model_name": "qwen/qwen3-235b-a22b:free",
+      "aliases": ["qwen3-235b-free", "qwen3-235b-a22b", "planner-qwen"],
+      "context_window": 131072,
+      "max_output_tokens": 131072,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "description": "Qwen3 235B A22B (free). MoE with tool use; great for large planning briefs."
+    },
+    {
+      "model_name": "qwen/qwen3-coder:free",
+      "aliases": ["qwen3-coder-free", "qwen-coder", "code-reviewer"],
+      "context_window": 262144,
+      "max_output_tokens": 262144,
+      "supports_extended_thinking": false,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "description": "Qwen3 Coder (free). Code-specialist MoE for reviews, tests, and refactors."
+    },
+    {
+      "model_name": "moonshotai/kimi-dev-72b:free",
+      "aliases": ["kimi-dev-72b-free", "kimi-dev", "bugfixer"],
+      "context_window": 131072,
+      "max_output_tokens": 131072,
+      "supports_extended_thinking": false,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "description": "Kimi Dev 72B (free). SWE-bench-strong for patch suggestions and fixes."
+    },
+    {
+      "model_name": "meta-llama/llama-4-maverick:free",
+      "aliases": ["llama-4-maverick-free", "maverick", "multimodal-specs"],
+      "context_window": 128000,
+      "max_output_tokens": 128000,
+      "supports_extended_thinking": false,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "description": "Llama-4 Maverick (free). Multimodal—useful for design/spec reviews."
+    },
+    {
+      "model_name": "openai/gpt-oss-20b:free",
+      "aliases": ["gpt-oss-20b-free", "oss-20b", "neutral-coder"],
+      "context_window": 131072,
+      "max_output_tokens": 131072,
+      "supports_extended_thinking": false,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "description": "OpenAI GPT-OSS-20B (free). Open-weights, solid structure & tool calling."
+    }
+  ]
+}

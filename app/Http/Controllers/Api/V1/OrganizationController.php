@@ -16,34 +16,6 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * @OA\Schema(
- *     schema="Organization",
- *     type="object",
- *
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="name", type="string", maxLength=120, example="Starbucks"),
- *     @OA\Property(property="slug", type="string", example="starbucks"),
- *     @OA\Property(property="legal_name", type="string", maxLength=255, example="Starbucks Corporation"),
- *     @OA\Property(property="domain", type="string", example="starbucks.com"),
- *     @OA\Property(property="website_url", type="string", format="url", example="https://starbucks.com"),
- *     @OA\Property(property="description", type="string", nullable=true, example="Global coffee chain"),
- *     @OA\Property(property="logo_url", type="string", format="url", nullable=true, example="https://example.com/logo.png"),
- *     @OA\Property(
- *         property="primary_industry",
- *         type="object",
- *         nullable=true,
- *         @OA\Property(property="id", type="integer", example=5),
- *         @OA\Property(property="name", type="string", example="Coffee Shop"),
- *         @OA\Property(property="slug", type="string", example="coffee-shop")
- *     ),
- *     @OA\Property(property="locations_count", type="integer", example=8450),
- *     @OA\Property(property="wage_reports_count", type="integer", example=2341),
- *     @OA\Property(property="is_verified", type="boolean", example=true),
- *     @OA\Property(property="verified_at", type="string", format="date-time", nullable=true, example="2024-01-15T10:30:00Z"),
- *     @OA\Property(property="created_at", type="string", format="date-time", example="2023-12-01T08:15:00Z"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-15T10:30:00Z")
- * )
- *
- * @OA\Schema(
  *     schema="OrganizationListItem",
  *     type="object",
  *
