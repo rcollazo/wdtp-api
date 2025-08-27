@@ -440,34 +440,11 @@ class WageReportCreationTest extends TestCase
         $response->assertStatus(422);
     }
 
-    public function test_rate_limiting_for_anonymous_users(): void
+    public function test_multiple_submissions_without_rate_limiting(): void
     {
-        $wageData = [
-            'location_id' => $this->location->id,
-            'position_category_id' => $this->positionCategory->id,
-            'wage_amount' => 15.00,
-            'wage_type' => 'hourly',
-            'employment_type' => 'part_time',
-        ];
-
-        // Make 3 requests (should all succeed)
-        for ($i = 0; $i < 3; $i++) {
-            $response = $this->postJson('/api/v1/wage-reports', $wageData);
-            $response->assertStatus(201);
-        }
-
-        // 4th request should be rate limited
-        $response = $this->postJson('/api/v1/wage-reports', $wageData);
-        $response->assertStatus(429);
-    }
-
-    public function test_rate_limiting_for_authenticated_users(): void
-    {
-        Sanctum::actingAs($this->user);
-
         // Create multiple positions to avoid duplicate detection
         $positions = [];
-        for ($i = 0; $i < 11; $i++) {
+        for ($i = 0; $i < 5; $i++) {
             $positions[] = PositionCategory::factory()->active()->create([
                 'name' => 'Server Position Test '.$i.' '.uniqid(),
                 'slug' => 'server-position-test-'.$i.'-'.uniqid(),
@@ -475,11 +452,11 @@ class WageReportCreationTest extends TestCase
             ]);
         }
 
-        // Make 10 requests (should all succeed due to higher limit for authenticated users)
-        for ($i = 0; $i < 10; $i++) {
+        // Make multiple requests (should all succeed as rate limiting is removed)
+        for ($i = 0; $i < 5; $i++) {
             $wageData = [
                 'location_id' => $this->location->id,
-                'position_category_id' => $positions[$i]->id, // Use different position each time
+                'position_category_id' => $positions[$i]->id,
                 'wage_amount' => 15.00,
                 'wage_type' => 'hourly',
                 'employment_type' => 'part_time',
@@ -488,17 +465,34 @@ class WageReportCreationTest extends TestCase
             $response = $this->postJson('/api/v1/wage-reports', $wageData);
             $response->assertStatus(201);
         }
+    }
 
-        // 11th request should be rate limited
-        $wageData = [
-            'location_id' => $this->location->id,
-            'position_category_id' => $positions[10]->id,
-            'wage_amount' => 15.00,
-            'wage_type' => 'hourly',
-            'employment_type' => 'part_time',
-        ];
+    public function test_authenticated_users_multiple_submissions(): void
+    {
+        Sanctum::actingAs($this->user);
 
-        $response = $this->postJson('/api/v1/wage-reports', $wageData);
-        $response->assertStatus(429);
+        // Create multiple positions to avoid duplicate detection
+        $positions = [];
+        for ($i = 0; $i < 10; $i++) {
+            $positions[] = PositionCategory::factory()->active()->create([
+                'name' => 'Server Position Test '.$i.' '.uniqid(),
+                'slug' => 'server-position-test-'.$i.'-'.uniqid(),
+                'industry_id' => $this->industry->id,
+            ]);
+        }
+
+        // Make multiple requests (should all succeed as rate limiting is removed)
+        for ($i = 0; $i < 10; $i++) {
+            $wageData = [
+                'location_id' => $this->location->id,
+                'position_category_id' => $positions[$i]->id,
+                'wage_amount' => 15.00,
+                'wage_type' => 'hourly',
+                'employment_type' => 'part_time',
+            ];
+
+            $response = $this->postJson('/api/v1/wage-reports', $wageData);
+            $response->assertStatus(201);
+        }
     }
 }

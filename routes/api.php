@@ -45,6 +45,6 @@ Route::prefix('v1')->group(function () {
     // Wage Reports endpoints (public read and write access)
     Route::get('wage-reports', [WageReportController::class, 'index']);
     Route::get('wage-reports/stats', [WageReportController::class, 'stats']);
-    Route::post('wage-reports', [WageReportController::class, 'store'])->middleware('throttle:wage-reports');
+    Route::post('wage-reports', [WageReportController::class, 'store']);
     Route::get('wage-reports/{wageReportId}', [WageReportController::class, 'show']);
 });

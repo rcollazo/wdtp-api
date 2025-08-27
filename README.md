@@ -33,11 +33,11 @@
 - Real-time location and organization wage analytics
 
 ### 🛡️ **Security & Performance**
-- Rate limiting with intelligent throttling (10 submissions per hour)
 - Comprehensive input validation and sanitization
 - Multi-layer caching with intelligent cache invalidation
 - Observer pattern for automatic data processing
 - Duplicate detection within 30-day windows
+- CORS configuration for SPA support with credential handling
 
 ### 🎮 **Gamification & Community**
 - XP points and achievement system (cjmellor/level-up)
@@ -141,7 +141,9 @@ curl http://localhost/api/v1/healthz
 
 ## 🔐 Authentication System
 
-**WDTP** uses **Laravel Sanctum** for secure token-based authentication. The platform supports both anonymous submissions and enhanced authenticated user experiences with gamification features.
+**WDTP** uses **Laravel Sanctum** for secure authentication supporting both token-based API access and cookie-based SPA authentication. The platform supports both anonymous submissions and enhanced authenticated user experiences with gamification features.
+
+> **For SPA Integration**: See the complete [SPA Authentication Guide](docs/SPA_AUTH.md) for cookie-based authentication setup with CORS configuration.
 
 ### **Authentication Overview**
 
@@ -325,12 +327,6 @@ curl -X POST http://localhost/api/v1/wage-reports \
 - Password strength requirements (8+ characters)
 - Geographic coordinate bounds validation
 - Phone number format validation
-
-**Rate Limiting:**
-- **Anonymous Users**: 5 submissions per hour
-- **Authenticated Users**: 10 submissions per hour
-- **Contributors**: 25 submissions per hour
-- **Token-based**: Per-user tracking with Sanctum
 
 **Duplicate Prevention:**
 - Same user + location + position within 30 days = blocked
@@ -536,6 +532,26 @@ GET /api/v1/organizations/{id}/wage-stats
 ./vendor/bin/sail artisan make:model NewModel -mfs
 ```
 
+### **Admin Bootstrap System**
+```bash
+# Ensure admin user exists (idempotent command)
+./vendor/bin/sail artisan admin:ensure
+
+# Alternative: Run AdminSeeder directly
+./vendor/bin/sail artisan db:seed --class=AdminSeeder
+
+# Set admin credentials in .env first:
+# APP_SEED_ADMIN_EMAIL=admin@yourdomain.com
+# APP_SEED_ADMIN_PASSWORD=your-secure-password
+```
+
+**Security Notes:**
+- Admin credentials are configured via environment variables
+- Commands are idempotent - safe to run multiple times
+- Only one admin user is created per system
+- Username 'admin' is reserved for the system administrator
+- For production, use strong passwords and secure email addresses
+
 ### **API Documentation**
 ```bash
 # Generate OpenAPI documentation
@@ -580,11 +596,11 @@ GET /api/v1/organizations/{id}/wage-stats
 - **SQL injection prevention** through Eloquent ORM
 - **XSS protection** via Laravel's built-in security features
 
-### **Rate Limiting & Abuse Prevention**
-- **Intelligent throttling**: 10 wage submissions per hour per user
+### **Abuse Prevention & Data Quality**
 - **Duplicate detection**: Prevents same user/location/position within 30 days
-- **IP-based rate limiting** for anonymous submissions
 - **Automatic outlier detection** and flagging
+- **Input sanitization** and validation at multiple layers
+- **Observer pattern** for automated data processing
 
 ---
 
