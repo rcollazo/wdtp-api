@@ -3,8 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Location;
-use App\Models\Organization;
-use App\Models\User;
 use App\Models\WageReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -27,14 +25,14 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testObserverPerformanceUnderLoad(): void
+    public function test_observer_performance_under_load(): void
     {
         $startTime = microtime(true);
 
         // Create 100 wage reports rapidly
         for ($i = 0; $i < 100; $i++) {
             WageReport::factory()->create([
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -46,7 +44,7 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testSingleObserverEventPerformance(): void
+    public function test_single_observer_event_performance(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -56,7 +54,7 @@ class ObserverPerformanceTest extends TestCase
         WageReport::factory()->create([
             'location_id' => $location->id,
             'organization_id' => $organization->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $endTime = microtime(true);
@@ -67,7 +65,7 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testSanityScoreCalculationPerformance(): void
+    public function test_sanity_score_calculation_performance(): void
     {
         $location = Location::factory()->create();
 
@@ -75,7 +73,7 @@ class ObserverPerformanceTest extends TestCase
         WageReport::factory()->count(10)->create([
             'location_id' => $location->id,
             'normalized_hourly_cents' => 1500,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $startTime = microtime(true);
@@ -94,7 +92,7 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testBulkOperationPerformance(): void
+    public function test_bulk_operation_performance(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -108,7 +106,7 @@ class ObserverPerformanceTest extends TestCase
             WageReport::factory()->create([
                 'location_id' => $location->id,
                 'organization_id' => $organization->id,
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -127,7 +125,7 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testDatabaseQueryOptimization(): void
+    public function test_database_query_optimization(): void
     {
         $location = Location::factory()->create();
 
@@ -136,7 +134,7 @@ class ObserverPerformanceTest extends TestCase
 
         WageReport::factory()->create([
             'location_id' => $location->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $queries = DB::getQueryLog();
@@ -147,7 +145,7 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testCounterUpdateOptimization(): void
+    public function test_counter_update_optimization(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -159,7 +157,7 @@ class ObserverPerformanceTest extends TestCase
             WageReport::factory()->create([
                 'location_id' => $location->id,
                 'organization_id' => $organization->id,
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -177,14 +175,14 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testMemoryUsageUnderLoad(): void
+    public function test_memory_usage_under_load(): void
     {
         $initialMemory = memory_get_usage();
 
         // Create many reports to test memory efficiency
         for ($i = 0; $i < 100; $i++) {
             WageReport::factory()->create([
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -196,7 +194,7 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testConcurrentObserverEvents(): void
+    public function test_concurrent_observer_events(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -211,7 +209,7 @@ class ObserverPerformanceTest extends TestCase
             $reports[] = WageReport::factory()->create([
                 'location_id' => $location->id,
                 'organization_id' => $organization->id,
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -235,7 +233,7 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testTransactionPerformance(): void
+    public function test_transaction_performance(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -249,7 +247,7 @@ class ObserverPerformanceTest extends TestCase
                 WageReport::factory()->create([
                     'location_id' => $location->id,
                     'organization_id' => $organization->id,
-                    'status' => 'approved'
+                    'status' => 'approved',
                 ]);
             }
         });
@@ -269,7 +267,7 @@ class ObserverPerformanceTest extends TestCase
     }
 
     /** @test */
-    public function testObserverEventComplexity(): void
+    public function test_observer_event_complexity(): void
     {
         // Create complex scenario with multiple locations
         $locations = Location::factory()->count(3)->create();
@@ -280,15 +278,15 @@ class ObserverPerformanceTest extends TestCase
         // Create reports across multiple locations
         foreach ($locations as $location) {
             $initialCount = $location->wage_reports_count;
-            
+
             for ($i = 0; $i < $reportsPerLocation; $i++) {
                 WageReport::factory()->create([
                     'location_id' => $location->id,
                     'organization_id' => $location->organization_id,
-                    'status' => 'approved'
+                    'status' => 'approved',
                 ]);
             }
-            
+
             // Verify counter for this location
             $location->refresh();
             $this->assertEquals($initialCount + $reportsPerLocation, $location->wage_reports_count);

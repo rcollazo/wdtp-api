@@ -3,8 +3,8 @@
 namespace Tests\Unit;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class UserModelTest extends TestCase
@@ -31,7 +31,7 @@ class UserModelTest extends TestCase
             'enabled',
         ];
 
-        $user = new User();
+        $user = new User;
         $this->assertEquals($expectedFillable, $user->getFillable());
     }
 
@@ -45,7 +45,7 @@ class UserModelTest extends TestCase
             'remember_token',
         ];
 
-        $user = new User();
+        $user = new User;
         $this->assertEquals($expectedHidden, $user->getHidden());
     }
 
@@ -193,7 +193,7 @@ class UserModelTest extends TestCase
     public function test_username_uniqueness(): void
     {
         User::factory()->create(['username' => 'testuser']);
-        
+
         $this->expectException(\Illuminate\Database\QueryException::class);
         User::factory()->create(['username' => 'testuser']);
     }

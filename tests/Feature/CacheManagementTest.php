@@ -2,9 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Location;
-use App\Models\Organization;
-use App\Models\User;
 use App\Models\WageReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -26,7 +23,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionBumpOnCreate(): void
+    public function test_cache_version_bump_on_create(): void
     {
         // Initialize cache versions
         Cache::put('wages:ver', 1);
@@ -46,7 +43,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionBumpOnUpdate(): void
+    public function test_cache_version_bump_on_update(): void
     {
         Cache::put('wages:ver', 10);
         Cache::put('orgs:ver', 10);
@@ -69,7 +66,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionBumpOnDelete(): void
+    public function test_cache_version_bump_on_delete(): void
     {
         $wageReport = WageReport::factory()->approved()->create();
 
@@ -87,7 +84,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionHandlesMissingKeys(): void
+    public function test_cache_version_handles_missing_keys(): void
     {
         // Ensure cache keys don't exist
         Cache::forget('wages:ver');
@@ -103,7 +100,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionIncrementIsSafe(): void
+    public function test_cache_version_increment_is_safe(): void
     {
         // Test with large cache version numbers
         Cache::put('wages:ver', PHP_INT_MAX - 1);
@@ -120,7 +117,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionPersistence(): void
+    public function test_cache_version_persistence(): void
     {
         Cache::put('wages:ver', 1);
         Cache::put('orgs:ver', 1);
@@ -139,7 +136,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionBumpOnStatusChange(): void
+    public function test_cache_version_bump_on_status_change(): void
     {
         // Create pending report
         $wageReport = WageReport::factory()->make([
@@ -165,7 +162,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionNotBumpedOnNonStatusUpdates(): void
+    public function test_cache_version_not_bumped_on_non_status_updates(): void
     {
         $wageReport = WageReport::factory()->create();
 
@@ -184,10 +181,10 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionBumpOnRestore(): void
+    public function test_cache_version_bump_on_restore(): void
     {
         $wageReport = WageReport::factory()->approved()->create();
-        
+
         // Delete the report first
         $wageReport->delete();
 
@@ -206,7 +203,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionBumpOnForceDelete(): void
+    public function test_cache_version_bump_on_force_delete(): void
     {
         $wageReport = WageReport::factory()->approved()->create();
 
@@ -225,7 +222,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionBumpMultipleOperations(): void
+    public function test_cache_version_bump_multiple_operations(): void
     {
         Cache::put('wages:ver', 1);
         Cache::put('orgs:ver', 1);
@@ -259,7 +256,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionThreadSafety(): void
+    public function test_cache_version_thread_safety(): void
     {
         Cache::put('wages:ver', 1);
         Cache::put('orgs:ver', 1);
@@ -279,7 +276,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionConsistency(): void
+    public function test_cache_version_consistency(): void
     {
         Cache::put('wages:ver', 100);
         Cache::put('orgs:ver', 100);
@@ -301,7 +298,7 @@ class CacheManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCacheVersionBumpPerformance(): void
+    public function test_cache_version_bump_performance(): void
     {
         Cache::put('wages:ver', 1);
         Cache::put('orgs:ver', 1);

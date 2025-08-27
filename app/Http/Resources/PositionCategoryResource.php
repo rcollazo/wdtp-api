@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 /**
  * @OA\Schema(
  *     schema="PositionCategory",
+ *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="name", type="string", example="Barista"),
  *     @OA\Property(property="slug", type="string", example="barista"),

@@ -2,8 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Location;
-use App\Models\Organization;
 use App\Models\User;
 use App\Models\WageReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,7 +20,7 @@ class GamificationTest extends TestCase
 
         // Ensure Level-Up package is available
         $this->assertTrue(class_exists(\LevelUp\Experience\Models\ExperienceAudit::class));
-        
+
         // Clear cache versions for consistent testing
         Cache::forget('wages:ver');
         Cache::forget('orgs:ver');
@@ -30,14 +28,14 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testXPAwardedForApprovedReport(): void
+    public function test_xp_awarded_for_approved_report(): void
     {
         $user = User::factory()->create();
         $initialXP = $user->getPoints();
 
         WageReport::factory()->create([
             'user_id' => $user->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $user->refresh();
@@ -53,14 +51,14 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testFirstReportBonusXP(): void
+    public function test_first_report_bonus_xp(): void
     {
         $user = User::factory()->create();
 
         // User's first wage report should get bonus XP
         WageReport::factory()->create([
             'user_id' => $user->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $user->refresh();
@@ -81,7 +79,7 @@ class GamificationTest extends TestCase
         // Second report should only get base XP
         WageReport::factory()->create([
             'user_id' => $user->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $user->refresh();
@@ -96,13 +94,13 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testAnonymousReportNoXPAwarded(): void
+    public function test_anonymous_report_no_xp_awarded(): void
     {
         $initialAuditCount = ExperienceAudit::count();
 
         WageReport::factory()->create([
             'user_id' => null,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // No XP audit entries should be created for anonymous reports
@@ -110,7 +108,7 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testNoXPForPendingReports(): void
+    public function test_no_xp_for_pending_reports(): void
     {
         $user = User::factory()->create();
         $initialXP = $user->getPoints();
@@ -135,7 +133,7 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testXPAwardedWhenReportApproved(): void
+    public function test_xp_awarded_when_report_approved(): void
     {
         $user = User::factory()->create();
         $initialXP = $user->getPoints();
@@ -160,20 +158,20 @@ class GamificationTest extends TestCase
 
         // XP should be awarded (but no first report bonus since this is via status change)
         $user->refresh();
-        
+
         // Note: Observer only awards XP on creation for approved reports
         // Status changes don't currently award XP in the observer
         $this->assertEquals($initialXP, $user->getPoints());
     }
 
     /** @test */
-    public function testExperienceAuditTrailCreated(): void
+    public function test_experience_audit_trail_created(): void
     {
         $user = User::factory()->create();
 
         WageReport::factory()->create([
             'user_id' => $user->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // Check that audit trail is properly created
@@ -196,7 +194,7 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testMultipleUsersXPIndependence(): void
+    public function test_multiple_users_xp_independence(): void
     {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
@@ -204,12 +202,12 @@ class GamificationTest extends TestCase
         // Both users submit their first reports
         WageReport::factory()->create([
             'user_id' => $user1->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         WageReport::factory()->create([
             'user_id' => $user2->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $user1->refresh();
@@ -228,15 +226,15 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testXPCalculationAccuracy(): void
+    public function test_xp_calculation_accuracy(): void
     {
         $user = User::factory()->create();
-        
+
         // Create multiple approved reports
         for ($i = 0; $i < 5; $i++) {
             WageReport::factory()->create([
                 'user_id' => $user->id,
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -252,13 +250,13 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testXPPersistsAcrossUserSessions(): void
+    public function test_xp_persists_across_user_sessions(): void
     {
         $user = User::factory()->create();
 
         WageReport::factory()->create([
             'user_id' => $user->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $user->refresh();
@@ -273,7 +271,7 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testXPHandlesLargeNumbers(): void
+    public function test_xp_handles_large_numbers(): void
     {
         $user = User::factory()->create();
 
@@ -284,7 +282,7 @@ class GamificationTest extends TestCase
 
         WageReport::factory()->create([
             'user_id' => $user->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $user->refresh();
@@ -294,12 +292,12 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testXPAwardErrorHandling(): void
+    public function test_xp_award_error_handling(): void
     {
         // Test XP award with non-existent user
         $wageReport = WageReport::factory()->make([
             'user_id' => 999999, // Non-existent user
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // Should not throw exception when saving
@@ -308,7 +306,7 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testFirstReportBonusWithExistingXP(): void
+    public function test_first_report_bonus_with_existing_xp(): void
     {
         $user = User::factory()->create();
 
@@ -318,7 +316,7 @@ class GamificationTest extends TestCase
 
         WageReport::factory()->create([
             'user_id' => $user->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $user->refresh();
@@ -328,7 +326,7 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testUserLevelProgression(): void
+    public function test_user_level_progression(): void
     {
         $user = User::factory()->create();
 
@@ -336,7 +334,7 @@ class GamificationTest extends TestCase
         for ($i = 0; $i < 10; $i++) {
             WageReport::factory()->create([
                 'user_id' => $user->id,
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -351,13 +349,13 @@ class GamificationTest extends TestCase
     }
 
     /** @test */
-    public function testXPReasonCategorization(): void
+    public function test_xp_reason_categorization(): void
     {
         $user = User::factory()->create();
 
         WageReport::factory()->create([
             'user_id' => $user->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // Verify different XP reason categories

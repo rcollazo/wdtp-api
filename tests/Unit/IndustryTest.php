@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Models\Industry;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;

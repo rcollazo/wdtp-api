@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 class Industry extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'name',
         'slug',

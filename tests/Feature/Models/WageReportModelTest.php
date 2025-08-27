@@ -22,7 +22,7 @@ class WageReportModelTest extends TestCase
         parent::setUp();
 
         // Verify PostGIS is available (for spatial tests)
-        if (!$this->hasPostGIS()) {
+        if (! $this->hasPostGIS()) {
             $this->markTestSkipped('PostGIS extension not available in test database');
         }
     }
@@ -31,6 +31,7 @@ class WageReportModelTest extends TestCase
     {
         try {
             DB::select('SELECT PostGIS_Version()');
+
             return true;
         } catch (\Exception $e) {
             return false;
@@ -38,7 +39,7 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testFactoryCreatesValidReports(): void
+    public function test_factory_creates_valid_reports(): void
     {
         $wageReport = WageReport::factory()->create();
 
@@ -58,22 +59,22 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testFactoryStatesWork(): void
+    public function test_factory_states_work(): void
     {
         // Test industry-specific factory states
         $foodService = WageReport::factory()->foodService()->create();
         $this->assertContains($foodService->job_title, [
-            'Server', 'Cashier', 'Cook', 'Kitchen Manager', 'Barista', 'Dishwasher'
+            'Server', 'Cashier', 'Cook', 'Kitchen Manager', 'Barista', 'Dishwasher',
         ]);
 
         $retail = WageReport::factory()->retail()->create();
         $this->assertContains($retail->job_title, [
-            'Sales Associate', 'Cashier', 'Stock Associate', 'Department Manager', 'Store Manager'
+            'Sales Associate', 'Cashier', 'Stock Associate', 'Department Manager', 'Store Manager',
         ]);
 
         $healthcare = WageReport::factory()->healthcare()->create();
         $this->assertContains($healthcare->job_title, [
-            'Medical Assistant', 'Receptionist', 'Nurse (RN)', 'Pharmacy Technician'
+            'Medical Assistant', 'Receptionist', 'Nurse (RN)', 'Pharmacy Technician',
         ]);
 
         // Test status factory states (observer may override status based on wage)
@@ -107,14 +108,14 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testDatabaseConstraints(): void
+    public function test_database_constraints(): void
     {
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();
 
         // Test positive amount constraint - model validation will catch this first
         $this->expectException(InvalidArgumentException::class);
-        
+
         WageReport::factory()->create([
             'organization_id' => $organization->id,
             'location_id' => $location->id,
@@ -123,13 +124,13 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testPositiveNormalizedHourlyConstraint(): void
+    public function test_positive_normalized_hourly_constraint(): void
     {
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();
 
         $this->expectException(QueryException::class);
-        
+
         // Try to directly insert negative normalized hourly cents (bypassing model normalization)
         DB::table('wage_reports')->insert([
             'organization_id' => $organization->id,
@@ -150,7 +151,7 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testForeignKeyConstraints(): void
+    public function test_foreign_key_constraints(): void
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
@@ -175,7 +176,7 @@ class WageReportModelTest extends TestCase
         $user2 = User::factory()->create();
         $organization2 = Organization::factory()->create();
         $location2 = Location::factory()->for($organization2)->create();
-        
+
         $wageReport2 = WageReport::factory()->create([
             'user_id' => $user2->id,
             'organization_id' => $organization2->id,
@@ -184,14 +185,14 @@ class WageReportModelTest extends TestCase
 
         // Clear any experience records to avoid foreign key constraint
         DB::table('experiences')->where('user_id', $user2->id)->delete();
-        
+
         $user2->delete();
         $wageReport2->refresh();
         $this->assertNull($wageReport2->user_id);
     }
 
     /** @test */
-    public function testModelEventsTriggered(): void
+    public function test_model_events_triggered(): void
     {
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();
@@ -220,10 +221,12 @@ class WageReportModelTest extends TestCase
 
     /**
      * @test
+     *
      * @group spatial
+     *
      * @requires extension postgis
      */
-    public function testSpatialQueriesWork(): void
+    public function test_spatial_queries_work(): void
     {
         $coordinates = [
             'nyc' => ['lat' => 40.7128, 'lng' => -74.0060],
@@ -248,7 +251,7 @@ class WageReportModelTest extends TestCase
 
         // Should find NYC and Chicago reports (both on east coast/midwest), but not LA
         $this->assertGreaterThan(0, $nearbyReports->count());
-        
+
         // Verify distance is included in results
         $firstReport = $nearbyReports->first();
         $this->assertNotNull($firstReport->distance_meters);
@@ -257,13 +260,15 @@ class WageReportModelTest extends TestCase
 
     /**
      * @test
+     *
      * @group spatial
+     *
      * @requires extension postgis
      */
-    public function testSpatialQueryAccuracy(): void
+    public function test_spatial_query_accuracy(): void
     {
         $organization = Organization::factory()->create();
-        
+
         // NYC coordinates with small variations
         $baseCoords = ['lat' => 40.7128, 'lng' => -74.0060];
         $nearbyCoords = ['lat' => 40.7130, 'lng' => -74.0065]; // ~50m away
@@ -294,17 +299,19 @@ class WageReportModelTest extends TestCase
 
     /**
      * @test
+     *
      * @group spatial
+     *
      * @requires extension postgis
      */
-    public function testSpatialQueryPerformance(): void
+    public function test_spatial_query_performance(): void
     {
         $organization = Organization::factory()->create();
         $baseCoords = ['lat' => 40.7128, 'lng' => -74.0060];
 
         // Create multiple wage reports at the same location
         $location = Location::factory()->withCoordinates($baseCoords['lat'], $baseCoords['lng'])->for($organization)->create();
-        
+
         WageReport::factory()->count(50)->create(['location_id' => $location->id]);
 
         $start = microtime(true);
@@ -320,7 +327,7 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testOrganizationDerivation(): void
+    public function test_organization_derivation(): void
     {
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();
@@ -336,7 +343,7 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testNormalizationOnCreate(): void
+    public function test_normalization_on_create(): void
     {
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();
@@ -366,7 +373,7 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testStatusWorkflow(): void
+    public function test_status_workflow(): void
     {
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();
@@ -376,7 +383,7 @@ class WageReportModelTest extends TestCase
             'organization_id' => $organization->id,
             'location_id' => $location->id,
         ]);
-        
+
         // Update status to pending directly
         $wageReport->update(['status' => 'pending']);
         $this->assertEquals('pending', $wageReport->status);
@@ -398,7 +405,7 @@ class WageReportModelTest extends TestCase
     }
 
     /** @test */
-    public function testBulkOperations(): void
+    public function test_bulk_operations(): void
     {
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();

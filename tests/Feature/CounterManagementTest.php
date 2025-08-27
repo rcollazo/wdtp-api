@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Location;
 use App\Models\Organization;
-use App\Models\User;
 use App\Models\WageReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -27,7 +26,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCountersMatchActualCounts(): void
+    public function test_counters_match_actual_counts(): void
     {
         $location1 = Location::factory()->create();
         $location2 = Location::factory()->create();
@@ -38,21 +37,21 @@ class CounterManagementTest extends TestCase
         WageReport::factory()->count(5)->create([
             'location_id' => $location1->id,
             'organization_id' => $organization1->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // Create non-approved reports (shouldn't count)
         WageReport::factory()->count(3)->create([
             'location_id' => $location1->id,
             'organization_id' => $organization1->id,
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         // Create approved reports for location2
         WageReport::factory()->count(2)->create([
             'location_id' => $location2->id,
             'organization_id' => $organization2->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // Verify counter accuracy
@@ -77,7 +76,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCounterIncrementOnCreation(): void
+    public function test_counter_increment_on_creation(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -87,7 +86,7 @@ class CounterManagementTest extends TestCase
         WageReport::factory()->create([
             'location_id' => $location->id,
             'organization_id' => $organization->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $location->refresh();
@@ -98,12 +97,12 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCounterDecrementOnDeletion(): void
+    public function test_counter_decrement_on_deletion(): void
     {
         $wageReport = WageReport::factory()->approved()->create();
         $location = $wageReport->location;
         $organization = $wageReport->organization;
-        
+
         $initialLocationCount = $location->wage_reports_count;
         $initialOrgCount = $organization->wage_reports_count;
 
@@ -117,7 +116,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCounterUnderflowProtection(): void
+    public function test_counter_underflow_protection(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -128,7 +127,7 @@ class CounterManagementTest extends TestCase
         $wageReport = WageReport::factory()->create([
             'location_id' => $location->id,
             'organization_id' => $organization->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // Manually set counters to 0 to simulate edge case
@@ -146,7 +145,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testConcurrentCounterUpdates(): void
+    public function test_concurrent_counter_updates(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -157,7 +156,7 @@ class CounterManagementTest extends TestCase
             $reports[] = WageReport::factory()->create([
                 'location_id' => $location->id,
                 'organization_id' => $organization->id,
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -182,7 +181,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCounterConsistencyAfterStatusChanges(): void
+    public function test_counter_consistency_after_status_changes(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -229,7 +228,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCounterInitializationFromExistingData(): void
+    public function test_counter_initialization_from_existing_data(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -271,7 +270,7 @@ class CounterManagementTest extends TestCase
                 'currency' => 'USD',
                 'created_at' => now(),
                 'updated_at' => now(),
-            ]
+            ],
         ]);
 
         // Calculate actual counts
@@ -291,7 +290,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCounterPerformanceUnderLoad(): void
+    public function test_counter_performance_under_load(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -303,7 +302,7 @@ class CounterManagementTest extends TestCase
             WageReport::factory()->create([
                 'location_id' => $location->id,
                 'organization_id' => $organization->id,
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
         }
 
@@ -322,7 +321,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCounterAtomicity(): void
+    public function test_counter_atomicity(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -334,7 +333,7 @@ class CounterManagementTest extends TestCase
             WageReport::factory()->create([
                 'location_id' => $location->id,
                 'organization_id' => $organization->id,
-                'status' => 'approved'
+                'status' => 'approved',
             ]);
 
             $location->refresh();
@@ -355,12 +354,12 @@ class CounterManagementTest extends TestCase
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->fail('Transaction should not have failed: ' . $e->getMessage());
+            $this->fail('Transaction should not have failed: '.$e->getMessage());
         }
     }
 
     /** @test */
-    public function testCounterRecoveryFromInconsistentState(): void
+    public function test_counter_recovery_from_inconsistent_state(): void
     {
         $location = Location::factory()->create();
         $organization = $location->organization;
@@ -369,7 +368,7 @@ class CounterManagementTest extends TestCase
         WageReport::factory()->count(3)->create([
             'location_id' => $location->id,
             'organization_id' => $organization->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         // Manually set counters to incorrect values
@@ -397,7 +396,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCountersWithMultipleOrganizations(): void
+    public function test_counters_with_multiple_organizations(): void
     {
         // Test that counters work correctly when same location belongs to different orgs
         $organization1 = Organization::factory()->create();
@@ -409,13 +408,13 @@ class CounterManagementTest extends TestCase
         WageReport::factory()->count(3)->create([
             'location_id' => $location1->id,
             'organization_id' => $organization1->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         WageReport::factory()->count(2)->create([
             'location_id' => $location2->id,
             'organization_id' => $organization2->id,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
 
         $location1->refresh();
@@ -430,7 +429,7 @@ class CounterManagementTest extends TestCase
     }
 
     /** @test */
-    public function testCountersWithNullableFields(): void
+    public function test_counters_with_nullable_fields(): void
     {
         // Test counter behavior when location_id or organization_id is null
         $location = Location::factory()->create();
@@ -440,7 +439,7 @@ class CounterManagementTest extends TestCase
         $report1 = WageReport::factory()->make([
             'organization_id' => $organization->id,
             'location_id' => null,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
         $report1->save();
 
@@ -455,7 +454,7 @@ class CounterManagementTest extends TestCase
         $report2 = WageReport::factory()->make([
             'location_id' => $location->id,
             'organization_id' => null,
-            'status' => 'approved'
+            'status' => 'approved',
         ]);
         $report2->save();
 

@@ -2,9 +2,6 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class SwaggerDocumentationTest extends TestCase
@@ -12,7 +9,7 @@ class SwaggerDocumentationTest extends TestCase
     public function test_swagger_documentation_route_is_accessible(): void
     {
         $response = $this->get('/api/documentation');
-        
+
         $response->assertStatus(200);
         $response->assertSee('WDTP API Documentation');
     }
@@ -20,13 +17,13 @@ class SwaggerDocumentationTest extends TestCase
     public function test_swagger_json_is_generated(): void
     {
         $response = $this->get('/docs');
-        
+
         $response->assertStatus(200);
         $response->assertHeader('content-type', 'application/json');
-        
+
         $content = $response->getContent();
         $json = json_decode($content, true);
-        
+
         $this->assertIsArray($json);
         $this->assertEquals('3.0.0', $json['openapi']);
         $this->assertEquals('WDTP API', $json['info']['title']);
@@ -37,15 +34,15 @@ class SwaggerDocumentationTest extends TestCase
     {
         $response = $this->get('/docs');
         $json = json_decode($response->getContent(), true);
-        
+
         $paths = $json['paths'];
-        
+
         // Check that all auth endpoints are documented
         $this->assertArrayHasKey('/api/v1/auth/register', $paths);
         $this->assertArrayHasKey('/api/v1/auth/login', $paths);
         $this->assertArrayHasKey('/api/v1/auth/logout', $paths);
         $this->assertArrayHasKey('/api/v1/auth/me', $paths);
-        
+
         // Check that register endpoint has proper documentation
         $register = $paths['/api/v1/auth/register']['post'];
         $this->assertEquals(['Authentication'], $register['tags']);
@@ -58,17 +55,17 @@ class SwaggerDocumentationTest extends TestCase
     {
         $response = $this->get('/docs');
         $json = json_decode($response->getContent(), true);
-        
+
         $paths = $json['paths'];
-        
+
         // Check that health endpoints are documented
         $this->assertArrayHasKey('/api/v1/healthz', $paths);
         $this->assertArrayHasKey('/api/v1/healthz/deep', $paths);
-        
+
         // Check that endpoints have proper tags
         $basic = $paths['/api/v1/healthz']['get'];
         $this->assertEquals(['Health'], $basic['tags']);
-        
+
         $deep = $paths['/api/v1/healthz/deep']['get'];
         $this->assertEquals(['Health'], $deep['tags']);
     }
@@ -77,11 +74,11 @@ class SwaggerDocumentationTest extends TestCase
     {
         $response = $this->get('/docs');
         $json = json_decode($response->getContent(), true);
-        
+
         $this->assertArrayHasKey('components', $json);
         $this->assertArrayHasKey('securitySchemes', $json['components']);
         $this->assertArrayHasKey('sanctum', $json['components']['securitySchemes']);
-        
+
         $sanctum = $json['components']['securitySchemes']['sanctum'];
         $this->assertEquals('apiKey', $sanctum['type']);
         $this->assertEquals('header', $sanctum['in']);
@@ -92,10 +89,10 @@ class SwaggerDocumentationTest extends TestCase
     {
         $response = $this->get('/docs');
         $json = json_decode($response->getContent(), true);
-        
+
         $this->assertArrayHasKey('components', $json);
         $this->assertArrayHasKey('schemas', $json['components']);
-        
+
         $schemas = $json['components']['schemas'];
         $this->assertArrayHasKey('User', $schemas);
         $this->assertArrayHasKey('UserPublic', $schemas);

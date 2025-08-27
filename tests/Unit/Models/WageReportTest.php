@@ -16,7 +16,7 @@ class WageReportTest extends TestCase
     use RefreshDatabase, WithFaker;
 
     /** @test */
-    public function testNormalizeToHourlyWithAllPeriods(): void
+    public function test_normalize_to_hourly_with_all_periods(): void
     {
         $testCases = [
             ['amount' => 1500, 'period' => 'hourly', 'expected' => 1500],
@@ -44,7 +44,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testNormalizeToHourlyEdgeCases(): void
+    public function test_normalize_to_hourly_edge_cases(): void
     {
         // Test with default hours per week
         $result = WageReport::normalizeToHourly(60000, 'weekly');
@@ -64,7 +64,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testNormalizeToHourlyInvalidPeriod(): void
+    public function test_normalize_to_hourly_invalid_period(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid wage period: invalid');
@@ -73,7 +73,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testNormalizeToHourlyOutOfBounds(): void
+    public function test_normalize_to_hourly_out_of_bounds(): void
     {
         // Test below minimum
         $this->expectException(InvalidArgumentException::class);
@@ -83,7 +83,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testNormalizeToHourlyAboveMaximum(): void
+    public function test_normalize_to_hourly_above_maximum(): void
     {
         // Test above maximum
         $this->expectException(InvalidArgumentException::class);
@@ -93,12 +93,12 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testModelRelationships(): void
+    public function test_model_relationships(): void
     {
         $user = User::factory()->create();
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();
-        
+
         $wageReport = WageReport::factory()->create([
             'user_id' => $user->id,
             'organization_id' => $organization->id,
@@ -119,39 +119,39 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testScopeApproved(): void
+    public function test_scope_approved(): void
     {
         // Clear any existing data
         WageReport::truncate();
-        
+
         // Create reports and manually update status to bypass observer
         $organization = Organization::factory()->create();
         $location = Location::factory()->for($organization)->create();
-        
+
         $approved = WageReport::factory()->create(['location_id' => $location->id]);
         $pending = WageReport::factory()->create(['location_id' => $location->id]);
         $rejected = WageReport::factory()->create(['location_id' => $location->id]);
-        
+
         // Update statuses directly in database to bypass observer
         $approved->update(['status' => 'approved']);
         $pending->update(['status' => 'pending']);
         $rejected->update(['status' => 'rejected']);
 
         $approvedReports = WageReport::approved()->get();
-        
+
         $this->assertEquals(1, $approvedReports->count());
         $this->assertEquals('approved', $approvedReports->first()->status);
     }
 
     /** @test */
-    public function testScopeByJobTitle(): void
+    public function test_scope_by_job_title(): void
     {
         WageReport::factory()->create(['job_title' => 'Software Engineer']);
         WageReport::factory()->create(['job_title' => 'Senior Software Engineer']);
         WageReport::factory()->create(['job_title' => 'Server']);
 
         $results = WageReport::byJobTitle('Engineer')->get();
-        
+
         $this->assertEquals(2, $results->count());
         foreach ($results as $report) {
             $this->assertStringContainsString('Engineer', $report->job_title);
@@ -159,7 +159,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testScopeRange(): void
+    public function test_scope_range(): void
     {
         WageReport::factory()->create(['normalized_hourly_cents' => 1000]); // $10.00/hour
         WageReport::factory()->create(['normalized_hourly_cents' => 1500]); // $15.00/hour
@@ -167,7 +167,7 @@ class WageReportTest extends TestCase
         WageReport::factory()->create(['normalized_hourly_cents' => 2500]); // $25.00/hour
 
         $results = WageReport::range(1200, 2200)->get();
-        
+
         $this->assertEquals(2, $results->count());
         foreach ($results as $report) {
             $this->assertGreaterThanOrEqual(1200, $report->normalized_hourly_cents);
@@ -176,17 +176,17 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testScopeInCurrency(): void
+    public function test_scope_in_currency(): void
     {
         // Clear any existing data
         WageReport::truncate();
-        
+
         WageReport::factory()->create(['currency' => 'USD']);
         WageReport::factory()->create(['currency' => 'CAD']);
         WageReport::factory()->create(['currency' => 'USD']); // Should be uppercase in factory
 
         $results = WageReport::inCurrency('usd')->get();
-        
+
         $this->assertEquals(2, $results->count());
         foreach ($results as $report) {
             $this->assertEquals('USD', $report->currency);
@@ -194,27 +194,27 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testScopeSince(): void
+    public function test_scope_since(): void
     {
         WageReport::factory()->create(['effective_date' => '2024-01-01']);
         WageReport::factory()->create(['effective_date' => '2024-06-01']);
         WageReport::factory()->create(['effective_date' => '2024-12-01']);
 
         $results = WageReport::since('2024-07-01')->get();
-        
+
         $this->assertEquals(1, $results->count());
         $this->assertEquals('2024-12-01', $results->first()->effective_date->format('Y-m-d'));
     }
 
     /** @test */
-    public function testScopeByEmploymentType(): void
+    public function test_scope_by_employment_type(): void
     {
         WageReport::factory()->create(['employment_type' => 'full_time']);
         WageReport::factory()->create(['employment_type' => 'part_time']);
         WageReport::factory()->create(['employment_type' => 'full_time']);
 
         $results = WageReport::byEmploymentType('full_time')->get();
-        
+
         $this->assertEquals(2, $results->count());
         foreach ($results as $report) {
             $this->assertEquals('full_time', $report->employment_type);
@@ -222,7 +222,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testHelperMethods(): void
+    public function test_helper_methods(): void
     {
         $wageReport = WageReport::factory()->make([
             'amount_cents' => 1550,
@@ -235,7 +235,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testOutlierDetection(): void
+    public function test_outlier_detection(): void
     {
         // Test normal report (not outlier)
         $normalReport = WageReport::factory()->make(['sanity_score' => 2]);
@@ -251,7 +251,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testSuspiciousWageDetection(): void
+    public function test_suspicious_wage_detection(): void
     {
         // Test normal wage
         $normalWage = WageReport::factory()->make(['normalized_hourly_cents' => 1500]);
@@ -277,7 +277,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testDisplayAttributes(): void
+    public function test_display_attributes(): void
     {
         $wageReport = WageReport::factory()->make([
             'employment_type' => 'full_time',
@@ -321,7 +321,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testCasts(): void
+    public function test_casts(): void
     {
         $wageReport = WageReport::factory()->create([
             'amount_cents' => 1500,
@@ -343,7 +343,7 @@ class WageReportTest extends TestCase
     }
 
     /** @test */
-    public function testFillableAttributes(): void
+    public function test_fillable_attributes(): void
     {
         $fillableAttributes = [
             'user_id',
@@ -365,8 +365,8 @@ class WageReportTest extends TestCase
             'notes',
         ];
 
-        $wageReport = new WageReport();
-        
+        $wageReport = new WageReport;
+
         foreach ($fillableAttributes as $attribute) {
             $this->assertContains($attribute, $wageReport->getFillable());
         }
@@ -391,9 +391,9 @@ class WageReportTest extends TestCase
             'sanity_score' => 0,
             'notes' => 'Test notes',
         ];
-        
+
         $wageReport = new WageReport($data);
-        
+
         foreach ($fillableAttributes as $attribute) {
             $this->assertNotNull($wageReport->getAttribute($attribute), "Attribute {$attribute} should not be null");
         }
