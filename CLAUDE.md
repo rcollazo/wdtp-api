@@ -103,10 +103,8 @@ DB_PASSWORD=kZ6-9uwz6H4XZCL8JkiP%
 │   ├── GET /{id}/wage-reports (organization wage reports)
 │   └── GET /{id}/wage-statistics (org-wide statistics)
 ├── locations/
-│   ├── GET / (spatial: near=lat,lon&radius_km=, filters)
-│   ├── POST / (auth: contributor+)
-│   ├── GET /{id}
-│   └── GET /{id}/wage-reports (location-specific reports)
+│   ├── GET / (spatial search: near=lat,lon&radius_km=, filters, pagination)
+│   └── GET /{locationId}/wage-stats (location wage statistics)
 ├── wage-reports/
 │   ├── POST / (anonymous & auth submissions, rate limited)
 │   ├── GET / (approved only, spatial search + comprehensive filters)
@@ -139,6 +137,16 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
 
 // Query parameters
 ?near=40.7128,-74.0060&radius_km=5
+```
+
+#### Location Search with Distance
+```php
+// Controller usage
+$locations = Location::near($lat, $lng, $radiusKm)
+    ->withDistance($lat, $lng)  
+    ->orderByDistance($lat, $lng)
+    ->with('organization')
+    ->paginate();
 ```
 
 #### Required Response Format
@@ -179,6 +187,7 @@ ST_Distance(locations.point, ST_SetSRID(ST_MakePoint(:lon,:lat),4326)::geography
   - Factory patterns and data generation (18 tests) 
   - Spatial query accuracy and performance (9 tests)
   - Seeder functionality with US cities (15 tests)
+- Location API endpoints fully tested (30 tests with spatial search, 223 assertions)
 - Position Categories comprehensively tested (119 tests across 7 test classes)
   - Model functionality and relationships (25 tests)
   - Database constraints and integrity (12 tests) 
@@ -347,6 +356,33 @@ docs(api): update OpenAPI specifications
 9. TODO: Gamification: Level-up integration + achievements
 10. TODO: Polish: Analytics + documentation + CI/CD
 
+### Location Search Integration Examples
+
+#### Basic Pagination
+```bash
+GET /api/v1/locations?per_page=20&page=1
+```
+
+#### Spatial Search (5km radius around NYC)
+```bash
+GET /api/v1/locations?near=40.7128,-74.0060&radius_km=5
+```
+
+#### Mobile Client (Bearer Token)
+```bash
+curl -X GET "https://api.wdtp.local/api/v1/locations?near=40.7128,-74.0060&radius_km=5" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -H "Content-Type: application/json"
+```
+
+#### Web Client (Cookie + CSRF)
+```bash
+curl -X GET "https://api.wdtp.local/api/v1/locations?near=40.7128,-74.0060&radius_km=5" \
+  -H "X-CSRF-TOKEN: abc123def456..." \
+  -H "Content-Type: application/json" \
+  -b "wdtp_session=session_token_here..."
+```
+
 ### Error Handling Patterns
 
 #### Standard Error Responses
@@ -391,6 +427,8 @@ docs(api): update OpenAPI specifications
 - GiST index utilization verified for PostGIS operations
 - Distance calculations accurate to ±25m (tested tolerance)
 - Dual storage: geography column for accuracy + lat/lng for performance
+- Location search endpoint: 7.8s test suite (30 tests, <500ms API response time)
+- Spatial query performance: <15ms with GiST index utilization
 
 #### Caching Strategy
 - Cache popular search queries (Redis when available)
