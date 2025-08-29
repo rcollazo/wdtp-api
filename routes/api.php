@@ -40,6 +40,7 @@ Route::prefix('v1')->group(function () {
     Route::get('position-categories/{idOrSlug}', [PositionCategoryController::class, 'show']);
 
     // Locations endpoints
+    Route::get('locations', [LocationController::class, 'index']);
     Route::get('locations/{locationId}/wage-stats', [LocationController::class, 'wageStats']);
 
     // Wage Reports endpoints (public read and write access)
