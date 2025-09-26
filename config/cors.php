@@ -27,6 +27,7 @@ return [
         env('APP_ENV') === 'local' ? 'http://127.0.0.1:3000' : null,
         env('APP_ENV') === 'local' ? 'http://127.0.0.1:3001' : null,
         env('APP_ENV') === 'local' ? 'http://127.0.0.1:8080' : null,
+        env('APP_ENV') === 'local' ? 'http://localhost:8081' : null,
     ]),
 
     'allowed_origins_patterns' => [],
