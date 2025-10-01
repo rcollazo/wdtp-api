@@ -29,3 +29,6 @@ Thumbs.db
 .\#*
 
 .mcp.json
+
+# Worktree directories
+/worktree
