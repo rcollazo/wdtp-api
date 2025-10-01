@@ -127,6 +127,36 @@ class Location extends Model
     }
 
     /**
+     * Scope to search locations by name or category using PostgreSQL full-text search.
+     * Returns results with text_rank column for relevance scoring.
+     *
+     * @param  string  $term  Search term to match against location names, addresses, and cities
+     */
+    public function scopeSearchByNameOrCategory(Builder $query, string $term): Builder
+    {
+        // Normalize search term for PostgreSQL tsquery
+        // Convert spaces to '&' operator for multi-word queries
+        $normalizedTerm = str_replace(' ', ' & ', trim($term));
+
+        return $query->selectRaw(
+            "locations.*,
+            LEAST(
+                ts_rank(
+                    to_tsvector('english', coalesce(name, '') || ' ' || coalesce(address_line_1, '') || ' ' || coalesce(city, '')),
+                    to_tsquery('english', ?),
+                    1
+                ),
+                1.0
+            ) as text_rank",
+            [$normalizedTerm]
+        )->whereRaw(
+            "to_tsvector('english', coalesce(name, '') || ' ' || coalesce(address_line_1, '') || ' ' || coalesce(city, ''))
+            @@ to_tsquery('english', ?)",
+            [$normalizedTerm]
+        );
+    }
+
+    /**
      * Scope to filter by city.
      */
     public function scopeInCity(Builder $query, string $city): Builder
