@@ -229,25 +229,57 @@ class LocationSeeder extends Seeder
             // Randomly assign an organization
             $organization = $organizations->random();
 
-            // Create the location
-            $location = Location::factory()
+            // Determine if this location should have OSM data (10-20% chance)
+            $shouldHaveOsm = fake()->boolean(15); // 15% chance = middle of 10-20% range
+
+            // Create the location with optional OSM data
+            $factory = Location::factory()
                 ->withCoordinates($locationData['lat'], $locationData['lon'])
-                ->active()
-                ->create([
-                    'organization_id' => $organization->id,
-                    'name' => $organization->name.' - '.$locationData['name'],
-                    'address_line_1' => $locationData['address'],
-                    'city' => $locationData['city'],
-                    'state_province' => $locationData['state'],
-                    'postal_code' => $locationData['postal_code'],
-                    'country_code' => 'US',
-                    'latitude' => $locationData['lat'],
-                    'longitude' => $locationData['lon'],
-                    'is_verified' => fake()->boolean(40), // 40% chance of being verified
-                ]);
+                ->active();
+
+            // Add OSM data to subset of locations
+            if ($shouldHaveOsm) {
+                // Distribution: 70% node, 25% way, 5% relation
+                $rand = fake()->numberBetween(1, 100);
+                if ($rand <= 70) {
+                    $factory = $factory->osmNode();
+                } elseif ($rand <= 95) {
+                    $factory = $factory->osmWay();
+                } else {
+                    $factory = $factory->osmRelation();
+                }
+            }
+
+            $location = $factory->create([
+                'organization_id' => $organization->id,
+                'name' => $organization->name.' - '.$locationData['name'],
+                'address_line_1' => $locationData['address'],
+                'city' => $locationData['city'],
+                'state_province' => $locationData['state'],
+                'postal_code' => $locationData['postal_code'],
+                'country_code' => 'US',
+                'latitude' => $locationData['lat'],
+                'longitude' => $locationData['lon'],
+                'is_verified' => fake()->boolean(40), // 40% chance of being verified
+            ]);
+
+            // Override OSM data address fields to match actual location address
+            if ($shouldHaveOsm && $location->osm_data) {
+                $osmData = $location->osm_data;
+                $addressParts = explode(' ', $locationData['address'], 2);
+                $osmData['addr:housenumber'] = $addressParts[0] ?? '';
+                $osmData['addr:street'] = $addressParts[1] ?? '';
+                $osmData['addr:city'] = $locationData['city'];
+                $osmData['addr:state'] = $locationData['state'];
+                $osmData['addr:postcode'] = $locationData['postal_code'];
+                $osmData['name'] = $location->name;
+
+                $location->update(['osm_data' => $osmData]);
+            }
 
             $createdCount++;
-            $this->command->info("Created location: {$location->name} in {$location->city}, {$location->state_province}");
+            $osmIndicator = $location->osm_id ? " [OSM: {$location->osm_type}]" : '';
+            $this->command->info("Created location: {$location->name} in {$location->city}, {$location->state_province}{$osmIndicator}");
         }
 
         $this->command->info("Successfully created {$createdCount} sample locations.");

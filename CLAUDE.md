@@ -64,6 +64,12 @@ DB_PASSWORD=kZ6-9uwz6H4XZCL8JkiP%
 - Route model binding support (ID and slug resolution)
 - Automatic PostGIS point updates via model events
 - Belong to organizations, have wage reports (when implemented)
+- **OpenStreetMap Integration**: Optional OSM fields for linking to OpenStreetMap data
+  - `osm_id`: OpenStreetMap element identifier (bigint, nullable)
+  - `osm_type`: Element type enum (node/way/relation, nullable)
+  - `osm_data`: JSONB field containing OSM tags (amenity, name, addr:*, etc., nullable)
+  - Used by unified location search for OSM-sourced locations
+  - Backward compatible - all OSM fields are optional
 
 #### Position Categories
 - Job position classifications within industries (Server, Cashier, Manager, etc.)
@@ -244,6 +250,12 @@ $locations = Location::near($lat, $lng, $radiusKm)
 - Location::factory()->losAngeles()->create()
 - Location::factory()->chicago()->create()
 
+// Location factory OSM states
+- Location::factory()->withOsmData()->create() // Random OSM type with data
+- Location::factory()->osmNode()->create() // OSM node type
+- Location::factory()->osmWay()->create() // OSM way type
+- Location::factory()->osmRelation()->create() // OSM relation type
+
 // Test spatial queries with realistic US coordinates (±500m tolerance)
 - NYC: 40.7128, -74.0060
 - LA: 34.0522, -118.2437  
@@ -284,6 +296,13 @@ $table->unique(['name', 'industry_id']); // Unique position names per industry
 $table->unique(['slug']); // Global slug uniqueness
 $table->index(['industry_id', 'status']); // Filtered queries
 $table->index(['name']); // Search performance
+
+// OpenStreetMap integration fields (optional)
+$table->bigInteger('osm_id')->nullable();
+$table->enum('osm_type', ['node', 'way', 'relation'])->nullable();
+$table->jsonb('osm_data')->nullable();
+$table->index('osm_id'); // OSM lookup
+$table->index(['osm_id', 'osm_type']); // Composite OSM queries
 ```
 
 #### Model Relationships
@@ -318,6 +337,42 @@ public function scopeInCity($query, $city): Builder
 public function scopeInState($query, $state): Builder
 public function scopeActive($query): Builder
 public function scopeVerified($query): Builder
+```
+
+#### Model Casts & Fillable Fields
+```php
+// Location model casts (osm_data automatically cast to array)
+protected function casts(): array
+{
+    return [
+        'osm_data' => 'array', // JSONB to PHP array
+        'is_active' => 'boolean',
+        'is_verified' => 'boolean',
+    ];
+}
+
+// Location fillable fields (including OSM fields)
+protected $fillable = [
+    'organization_id', 'name', 'slug', 'address_line_1', 'address_line_2',
+    'city', 'state_province', 'postal_code', 'country_code', 'phone',
+    'website_url', 'description', 'latitude', 'longitude', 'is_active',
+    'is_verified', 'verification_notes', 'osm_id', 'osm_type', 'osm_data',
+];
+
+// OSM data structure example
+$location->osm_data = [
+    'name' => 'Example Restaurant',
+    'amenity' => 'restaurant',
+    'cuisine' => 'italian',
+    'addr:housenumber' => '123',
+    'addr:street' => 'Main Street',
+    'addr:city' => 'New York',
+    'addr:state' => 'NY',
+    'addr:postcode' => '10001',
+    'phone' => '+1-555-123-4567',
+    'website' => 'https://example.com',
+    'opening_hours' => 'Mo-Su 09:00-22:00',
+];
 ```
 
 ### Validation & Business Rules

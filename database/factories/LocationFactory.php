@@ -94,6 +94,9 @@ class LocationFactory extends Factory
             'is_active' => fake()->boolean(90), // 90% active
             'is_verified' => fake()->boolean(30), // 30% verified
             'verification_notes' => null,
+            'osm_id' => null,
+            'osm_type' => null,
+            'osm_data' => null,
         ];
     }
 
@@ -200,5 +203,74 @@ class LocationFactory extends Factory
     public function chicago(): static
     {
         return $this->inCity('Chicago');
+    }
+
+    /**
+     * Create a location with OpenStreetMap data.
+     */
+    public function withOsmData(): static
+    {
+        return $this->state(function (array $attributes) {
+            $osmType = fake()->randomElement(['node', 'way', 'relation']);
+            $osmId = fake()->numberBetween(1000000, 999999999);
+
+            // Generate realistic OSM tag data based on type
+            $osmData = [
+                'name' => $attributes['name'] ?? fake()->company(),
+                'amenity' => fake()->randomElement(['restaurant', 'cafe', 'bank', 'pharmacy', 'shop', 'fast_food']),
+                'addr:housenumber' => explode(' ', $attributes['address_line_1'] ?? '')[0] ?? fake()->buildingNumber(),
+                'addr:street' => fake()->streetName(),
+                'addr:city' => $attributes['city'] ?? fake()->city(),
+                'addr:state' => $attributes['state_province'] ?? fake()->stateAbbr(),
+                'addr:postcode' => $attributes['postal_code'] ?? fake()->postcode(),
+            ];
+
+            // Add optional tags
+            if (fake()->boolean(40)) {
+                $osmData['phone'] = $attributes['phone'] ?? fake()->phoneNumber();
+            }
+            if (fake()->boolean(30)) {
+                $osmData['website'] = $attributes['website_url'] ?? fake()->url();
+            }
+            if (fake()->boolean(20)) {
+                $osmData['opening_hours'] = 'Mo-Fr 09:00-17:00';
+            }
+
+            return [
+                'osm_id' => $osmId,
+                'osm_type' => $osmType,
+                'osm_data' => $osmData,
+            ];
+        });
+    }
+
+    /**
+     * Create a location with OSM node type.
+     */
+    public function osmNode(): static
+    {
+        return $this->withOsmData()->state(fn (array $attributes) => [
+            'osm_type' => 'node',
+        ]);
+    }
+
+    /**
+     * Create a location with OSM way type.
+     */
+    public function osmWay(): static
+    {
+        return $this->withOsmData()->state(fn (array $attributes) => [
+            'osm_type' => 'way',
+        ]);
+    }
+
+    /**
+     * Create a location with OSM relation type.
+     */
+    public function osmRelation(): static
+    {
+        return $this->withOsmData()->state(fn (array $attributes) => [
+            'osm_type' => 'relation',
+        ]);
     }
 }
