@@ -9,11 +9,13 @@ use App\Http\Resources\LocationResource;
 use App\Http\Resources\UnifiedLocationResource;
 use App\Http\Resources\WageStatisticsResource;
 use App\Models\Location;
+use App\Services\OverpassService;
 use App\Services\RelevanceScorer;
 use App\Services\WageStatisticsService;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -25,7 +27,8 @@ class LocationController extends Controller
 {
     public function __construct(
         private WageStatisticsService $statisticsService,
-        private RelevanceScorer $relevanceScorer
+        private RelevanceScorer $relevanceScorer,
+        private OverpassService $overpassService
     ) {}
 
     /**
@@ -137,11 +140,11 @@ class LocationController extends Controller
     }
 
     /**
-     * Search locations with text and spatial filtering (WDTP-only for now).
+     * Search locations with text and spatial filtering (unified WDTP + OSM).
      *
-     * Queries WDTP locations using full-text search and spatial filtering,
-     * calculates relevance scores, and returns sorted, paginated results.
-     * OSM integration will be added in a later task.
+     * Queries both WDTP database locations and OpenStreetMap POIs,
+     * merges results, calculates relevance scores, and returns sorted,
+     * paginated unified results. Handles OSM failures gracefully.
      */
     public function search(LocationSearchRequest $request): JsonResource
     {
@@ -170,16 +173,59 @@ class LocationController extends Controller
             });
         }
 
-        // Get all results to calculate relevance scores
-        $locations = $query->get();
+        // Get WDTP results and limit to prevent OOM
+        $wdtpResults = $query->get()->take(1000);
 
-        // Calculate relevance score for each location
-        foreach ($locations as $location) {
+        // Calculate relevance score for each WDTP location
+        foreach ($wdtpResults as $location) {
             $location->relevance_score = $this->relevanceScorer->calculate($location, $radiusKm);
         }
 
-        // Sort by relevance score descending
-        $sorted = $locations->sortByDesc('relevance_score')->values();
+        // Initialize OSM results collection and unavailable flag
+        $osmResults = collect([]);
+        $osmUnavailable = false;
+
+        // Query OSM if include_osm parameter is true
+        if ($request->boolean('include_osm')) {
+            try {
+                // Query OSM POIs and limit to prevent OOM
+                $osmResults = $this->overpassService->search($searchQuery, $lat, $lng, $radiusKm)
+                    ->take(1000);
+
+                // Calculate distance and relevance for each OSM result
+                foreach ($osmResults as $osmLocation) {
+                    // Calculate distance using Haversine formula (distance already set by service)
+                    // Distance is already calculated in OverpassService, just verify it exists
+                    if ($osmLocation->distance_meters === null) {
+                        $osmLocation->distance_meters = $this->calculateHaversineDistance(
+                            $lat,
+                            $lng,
+                            $osmLocation->latitude,
+                            $osmLocation->longitude
+                        );
+                    }
+
+                    // Calculate relevance score
+                    $osmLocation->relevance_score = $this->relevanceScorer->calculate($osmLocation, $radiusKm);
+                }
+            } catch (\Exception $e) {
+                // Log OSM failure but continue with WDTP results (graceful degradation)
+                Log::warning('OSM search failed - continuing with WDTP results only', [
+                    'query' => $searchQuery,
+                    'error' => $e->getMessage(),
+                    'lat' => $lat,
+                    'lng' => $lng,
+                    'radius_km' => $radiusKm,
+                ]);
+                $osmUnavailable = true;
+            }
+        }
+
+        // Merge WDTP and OSM results
+        $merged = $wdtpResults->merge($osmResults);
+
+        // Sort merged results by relevance score descending
+        $sorted = $merged->sortByDesc('relevance_score')->values();
 
         // Manual pagination
         $offset = ($page - 1) * $perPage;
@@ -194,8 +240,8 @@ class LocationController extends Controller
         // Build comprehensive meta object
         $meta = [
             'total' => $sorted->count(),
-            'wdtp_count' => $sorted->count(),
-            'osm_count' => 0, // OSM integration in Task 4.2
+            'wdtp_count' => $wdtpResults->count(),
+            'osm_count' => $osmResults->count(),
             'search_query' => $searchQuery,
             'search_type' => $this->detectSearchType($searchQuery),
             'center' => [
@@ -203,10 +249,36 @@ class LocationController extends Controller
                 'lng' => $lng,
             ],
             'radius_km' => $radiusKm,
+            'osm_unavailable' => $osmUnavailable,
         ];
 
         return UnifiedLocationResource::collection($paginated)
             ->additional(['meta' => $meta]);
+    }
+
+    /**
+     * Calculate distance between two points using Haversine formula.
+     *
+     * @param  float  $lat1  Latitude of first point
+     * @param  float  $lng1  Longitude of first point
+     * @param  float  $lat2  Latitude of second point
+     * @param  float  $lng2  Longitude of second point
+     * @return float Distance in meters
+     */
+    private function calculateHaversineDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadius = 6371000; // Earth's radius in meters
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($dLng / 2) * sin($dLng / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 
     /**
