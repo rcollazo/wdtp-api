@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LocationIndexRequest;
+use App\Http\Requests\LocationSearchRequest;
 use App\Http\Resources\LocationResource;
+use App\Http\Resources\UnifiedLocationResource;
 use App\Http\Resources\WageStatisticsResource;
 use App\Models\Location;
+use App\Services\RelevanceScorer;
 use App\Services\WageStatisticsService;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @OA\Tag(
@@ -18,7 +23,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class LocationController extends Controller
 {
-    public function __construct(private WageStatisticsService $statisticsService) {}
+    public function __construct(
+        private WageStatisticsService $statisticsService,
+        private RelevanceScorer $relevanceScorer
+    ) {}
 
     /**
      * @OA\Get(
@@ -126,6 +134,104 @@ class LocationController extends Controller
         return LocationResource::collection(
             $query->paginate($perPage)
         );
+    }
+
+    /**
+     * Search locations with text and spatial filtering (WDTP-only for now).
+     *
+     * Queries WDTP locations using full-text search and spatial filtering,
+     * calculates relevance scores, and returns sorted, paginated results.
+     * OSM integration will be added in a later task.
+     */
+    public function search(LocationSearchRequest $request): JsonResource
+    {
+        // Extract validated parameters
+        $searchQuery = $request->q;
+        $lat = $request->lat;
+        $lng = $request->lng;
+        $radiusKm = $request->get('radius_km', 10);
+        $minWageReports = $request->min_wage_reports;
+        $perPage = $request->get('per_page', 100);
+        $page = $request->get('page', 1);
+
+        // Build WDTP location query
+        $query = Location::with('organization')
+            ->active()
+            ->searchByNameOrCategory($searchQuery)
+            ->near($lat, $lng, $radiusKm)
+            ->withDistance($lat, $lng);
+
+        // Apply min_wage_reports filter if provided
+        if ($minWageReports !== null) {
+            $query->whereHas('wageReports', function ($q) use ($minWageReports) {
+                $q->select(DB::raw('1'))
+                    ->groupBy('location_id')
+                    ->havingRaw('count(*) >= ?', [$minWageReports]);
+            });
+        }
+
+        // Get all results to calculate relevance scores
+        $locations = $query->get();
+
+        // Calculate relevance score for each location
+        foreach ($locations as $location) {
+            $location->relevance_score = $this->relevanceScorer->calculate($location, $radiusKm);
+        }
+
+        // Sort by relevance score descending
+        $sorted = $locations->sortByDesc('relevance_score')->values();
+
+        // Manual pagination
+        $offset = ($page - 1) * $perPage;
+        $paginated = new LengthAwarePaginator(
+            $sorted->slice($offset, $perPage)->values(),
+            $sorted->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        // Build comprehensive meta object
+        $meta = [
+            'total' => $sorted->count(),
+            'wdtp_count' => $sorted->count(),
+            'osm_count' => 0, // OSM integration in Task 4.2
+            'search_query' => $searchQuery,
+            'search_type' => $this->detectSearchType($searchQuery),
+            'center' => [
+                'lat' => $lat,
+                'lng' => $lng,
+            ],
+            'radius_km' => $radiusKm,
+        ];
+
+        return UnifiedLocationResource::collection($paginated)
+            ->additional(['meta' => $meta]);
+    }
+
+    /**
+     * Detect search type based on query pattern.
+     *
+     * Simple heuristic: common category keywords indicate category search,
+     * otherwise assume name-based search.
+     */
+    private function detectSearchType(string $query): string
+    {
+        $categoryKeywords = [
+            'restaurant', 'cafe', 'coffee', 'store', 'shop', 'market',
+            'hospital', 'clinic', 'pharmacy', 'hotel', 'motel', 'inn',
+            'bank', 'gas', 'station', 'grocery', 'retail', 'bar', 'pub',
+        ];
+
+        $queryLower = strtolower($query);
+
+        foreach ($categoryKeywords as $keyword) {
+            if (str_contains($queryLower, $keyword)) {
+                return 'category';
+            }
+        }
+
+        return 'name';
     }
 
     /**
