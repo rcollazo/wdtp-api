@@ -325,6 +325,341 @@
                 }
             }
         },
+        "/api/v1/locations/search": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Unified location search",
+                "description": "Search locations combining WDTP database and optional OpenStreetMap POIs. Performs text-based search with spatial filtering, calculates relevance scores, and returns merged, sorted results from both sources.",
+                "operationId": "d0e0dab2f63f999eaf461c9c042e714d",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Search query (location name or category like 'restaurant', 'cafe', 'retail'). Minimum 2 characters.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "example": "starbucks"
+                        }
+                    },
+                    {
+                        "name": "lat",
+                        "in": "query",
+                        "description": "Center point latitude for spatial search",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "maximum": 90,
+                            "minimum": -90,
+                            "example": 40.7128
+                        }
+                    },
+                    {
+                        "name": "lng",
+                        "in": "query",
+                        "description": "Center point longitude for spatial search",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "maximum": 180,
+                            "minimum": -180,
+                            "example": -74.006
+                        }
+                    },
+                    {
+                        "name": "radius_km",
+                        "in": "query",
+                        "description": "Search radius in kilometers (0.1-50km, default: 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "default": 10,
+                            "maximum": 50,
+                            "minimum": 0.1
+                        }
+                    },
+                    {
+                        "name": "include_osm",
+                        "in": "query",
+                        "description": "Include OpenStreetMap POIs in results (default: false). When true, queries OSM API for additional locations.",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
+                        "name": "min_wage_reports",
+                        "in": "query",
+                        "description": "Filter WDTP locations with minimum number of wage reports",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Results per page (1-500, default: 100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 100,
+                            "maximum": 500,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful search with merged WDTP and OSM results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "description": "Array of unified location results sorted by relevance score",
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/UnifiedLocation"
+                                            }
+                                        },
+                                        "links": {
+                                            "description": "Pagination links",
+                                            "properties": {
+                                                "first": {
+                                                    "type": "string",
+                                                    "example": "http://api.wdtp.local/api/v1/locations/search?page=1"
+                                                },
+                                                "last": {
+                                                    "type": "string",
+                                                    "example": "http://api.wdtp.local/api/v1/locations/search?page=10"
+                                                },
+                                                "prev": {
+                                                    "type": "string",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "next": {
+                                                    "type": "string",
+                                                    "example": "http://api.wdtp.local/api/v1/locations/search?page=2"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "description": "Search metadata and result counts",
+                                            "properties": {
+                                                "total": {
+                                                    "description": "Total number of results found",
+                                                    "type": "integer",
+                                                    "example": 127
+                                                },
+                                                "wdtp_count": {
+                                                    "description": "Number of WDTP database results",
+                                                    "type": "integer",
+                                                    "example": 23
+                                                },
+                                                "osm_count": {
+                                                    "description": "Number of OpenStreetMap results",
+                                                    "type": "integer",
+                                                    "example": 104
+                                                },
+                                                "search_query": {
+                                                    "description": "Original search query",
+                                                    "type": "string",
+                                                    "example": "starbucks"
+                                                },
+                                                "search_type": {
+                                                    "description": "Detected search type",
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "name",
+                                                        "category"
+                                                    ],
+                                                    "example": "name"
+                                                },
+                                                "center": {
+                                                    "description": "Search center coordinates",
+                                                    "properties": {
+                                                        "lat": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 40.7128
+                                                        },
+                                                        "lng": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": -74.006
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "radius_km": {
+                                                    "description": "Search radius used",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 5
+                                                },
+                                                "osm_unavailable": {
+                                                    "description": "True if OSM query failed",
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "data": [
+                                        {
+                                            "source": "wdtp",
+                                            "location_id": 42,
+                                            "osm_id": null,
+                                            "osm_type": null,
+                                            "name": "Starbucks - Times Square",
+                                            "latitude": 40.758,
+                                            "longitude": -73.9855,
+                                            "has_wage_data": true,
+                                            "wage_reports_count": 12,
+                                            "address": "1556 Broadway, New York, NY 10036",
+                                            "organization": {
+                                                "id": 5,
+                                                "name": "Starbucks Corporation",
+                                                "industry_id": 1
+                                            },
+                                            "distance_meters": 245.8,
+                                            "relevance_score": 0.92
+                                        },
+                                        {
+                                            "source": "osm",
+                                            "location_id": null,
+                                            "osm_id": "node/123456789",
+                                            "osm_type": "node",
+                                            "name": "Starbucks",
+                                            "latitude": 40.7548,
+                                            "longitude": -73.9872,
+                                            "has_wage_data": false,
+                                            "wage_reports_count": 0,
+                                            "address": "Broadway, New York",
+                                            "organization": null,
+                                            "distance_meters": 412.3,
+                                            "relevance_score": 0.85
+                                        }
+                                    ],
+                                    "links": {
+                                        "first": "http://api.wdtp.local/api/v1/locations/search?page=1",
+                                        "last": "http://api.wdtp.local/api/v1/locations/search?page=2",
+                                        "prev": null,
+                                        "next": "http://api.wdtp.local/api/v1/locations/search?page=2"
+                                    },
+                                    "meta": {
+                                        "total": 127,
+                                        "wdtp_count": 23,
+                                        "osm_count": 104,
+                                        "search_query": "starbucks",
+                                        "search_type": "name",
+                                        "center": {
+                                            "lat": 40.7128,
+                                            "lng": -74.006
+                                        },
+                                        "radius_km": 5,
+                                        "osm_unavailable": false,
+                                        "current_page": 1,
+                                        "per_page": 100,
+                                        "last_page": 2
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error - invalid parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "q": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The q field must be at least 2 characters."
+                                                    }
+                                                },
+                                                "lat": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The lat field must be between -90 and 90."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error - WDTP query failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Server error occurred during location search"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/locations/{locationId}/wage-stats": {
             "get": {
                 "tags": [
@@ -2229,6 +2564,33 @@
                         "format": "float",
                         "example": -74.006
                     },
+                    "osm_id": {
+                        "description": "OpenStreetMap node/way/relation ID",
+                        "type": "integer",
+                        "example": 123456789,
+                        "nullable": true
+                    },
+                    "osm_type": {
+                        "description": "OpenStreetMap element type",
+                        "type": "string",
+                        "enum": [
+                            "node",
+                            "way",
+                            "relation"
+                        ],
+                        "example": "node",
+                        "nullable": true
+                    },
+                    "osm_data": {
+                        "description": "OpenStreetMap tags and metadata",
+                        "type": "object",
+                        "example": {
+                            "name": "Example Store",
+                            "amenity": "restaurant",
+                            "addr:street": "Main Street"
+                        },
+                        "nullable": true
+                    },
                     "is_active": {
                         "type": "boolean",
                         "example": true
@@ -2401,6 +2763,99 @@
                         "type": "string",
                         "format": "datetime",
                         "example": "2024-08-26T10:30:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "UnifiedLocation": {
+                "title": "Unified Location",
+                "description": "Unified location data from either WDTP database or OpenStreetMap",
+                "properties": {
+                    "source": {
+                        "description": "Location data source",
+                        "type": "string",
+                        "enum": [
+                            "wdtp",
+                            "osm"
+                        ],
+                        "example": "wdtp"
+                    },
+                    "location_id": {
+                        "description": "WDTP location ID (null for OSM locations)",
+                        "type": "integer",
+                        "example": 42,
+                        "nullable": true
+                    },
+                    "osm_id": {
+                        "description": "OpenStreetMap ID in format 'node/123' or 'way/456' (null for WDTP locations)",
+                        "type": "string",
+                        "example": "node/123456789",
+                        "nullable": true
+                    },
+                    "osm_type": {
+                        "description": "OpenStreetMap element type (null for WDTP locations)",
+                        "type": "string",
+                        "enum": [
+                            "node",
+                            "way"
+                        ],
+                        "example": "node",
+                        "nullable": true
+                    },
+                    "name": {
+                        "description": "Location name",
+                        "type": "string",
+                        "example": "Starbucks - Times Square"
+                    },
+                    "latitude": {
+                        "description": "Location latitude",
+                        "type": "number",
+                        "format": "float",
+                        "example": 40.758
+                    },
+                    "longitude": {
+                        "description": "Location longitude",
+                        "type": "number",
+                        "format": "float",
+                        "example": -73.9855
+                    },
+                    "has_wage_data": {
+                        "description": "Whether location has wage reports (always false for OSM)",
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "wage_reports_count": {
+                        "description": "Number of wage reports (always 0 for OSM)",
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "address": {
+                        "description": "Formatted address",
+                        "type": "string",
+                        "example": "1556 Broadway, New York, NY 10036"
+                    },
+                    "organization": {
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/Organization"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Associated organization (null for OSM locations)"
+                    },
+                    "distance_meters": {
+                        "description": "Distance from search center in meters",
+                        "type": "number",
+                        "format": "float",
+                        "example": 245.8,
+                        "nullable": true
+                    },
+                    "relevance_score": {
+                        "description": "Search relevance score (0-1)",
+                        "type": "number",
+                        "format": "float",
+                        "example": 0.92,
+                        "nullable": true
                     }
                 },
                 "type": "object"
