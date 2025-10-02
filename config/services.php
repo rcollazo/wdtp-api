@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'overpass' => [
+        'base_url' => env('OVERPASS_API_URL', 'http://10.192.50.3:8082/overpass/api/interpreter'),
+        'timeout' => (int) env('OVERPASS_TIMEOUT', 10),
+        'enabled' => (bool) env('OVERPASS_ENABLED', true),
+    ],
+
 ];

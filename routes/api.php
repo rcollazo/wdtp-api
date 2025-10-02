@@ -41,6 +41,7 @@ Route::prefix('v1')->group(function () {
 
     // Locations endpoints
     Route::get('locations', [LocationController::class, 'index']);
+    Route::get('locations/search', [LocationController::class, 'search']);
     Route::get('locations/{locationId}/wage-stats', [LocationController::class, 'wageStats']);
 
     // Wage Reports endpoints (public read and write access)
