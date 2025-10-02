@@ -344,6 +344,149 @@ docs(api): update OpenAPI specifications
 
 **IMPORTANT**: Never include AI/Claude references in commit messages. Keep commits professional and focused on the actual changes made.
 
+### Git Worktree and Branch Structure
+
+#### Branch Hierarchy
+
+```
+main (production, never touch)
+  ↑
+  └── api-mvp/base
+
+api-mvp/base (stable base, never commit directly)
+  ↓↑
+  api-mvp/claude (integration branch, never commit directly)
+    ↓
+    api-mvp/feat/<feature>-claude (ephemeral feature branches)
+```
+
+#### Worktree Layout
+
+```
+wdtp-api/                          # Main repo (main branch)
+├── .git/                          # Git metadata
+└── worktree/                      # Worktree directory
+    ├── claude/                    # Persistent integration worktree
+    │   └── [api-mvp/claude]       # Integration branch
+    │
+    └── <feature>-claude/          # Ephemeral feature worktrees
+        └── [api-mvp/feat/<feature>-claude]  # Feature branches
+```
+
+#### Development Workflow
+
+**1. Create Feature Worktree**
+```bash
+# From api-mvp/claude branch
+git worktree add ./worktree/<feature>-claude -b api-mvp/feat/<feature>-claude api-mvp/claude
+```
+
+**2. Work in Feature Worktree**
+```bash
+cd ./worktree/<feature>-claude
+
+# Make changes, commit atomically
+git add .
+git commit -m "feat(search): implement location search endpoint"
+
+# Rebase against api-mvp/claude regularly
+git fetch origin
+git rebase api-mvp/claude
+```
+
+**3. Merge Back to Integration**
+```bash
+# Switch to integration worktree
+cd ./worktree/claude
+
+# Ensure up to date
+git pull
+
+# Merge feature branch
+git merge api-mvp/feat/<feature>-claude
+
+# Push integration branch
+git push origin api-mvp/claude
+```
+
+**4. Merge to Stable Base**
+```bash
+# Switch to api-mvp/base
+git checkout api-mvp/base
+
+# Merge integration branch
+git merge api-mvp/claude
+
+# Push stable base
+git push origin api-mvp/base
+```
+
+**5. Cleanup**
+```bash
+# Remove feature worktree
+git worktree remove ./worktree/<feature>-claude
+
+# Delete feature branch (local)
+git branch -d api-mvp/feat/<feature>-claude
+
+# Delete feature branch (remote, if pushed)
+git push origin --delete api-mvp/feat/<feature>-claude
+```
+
+**6. Production Release**
+```bash
+# From api-mvp/base
+git checkout main
+git merge api-mvp/base
+
+# Tag release
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin main --tags
+```
+
+#### Key Principles
+
+**Never Commit Directly To:**
+- `main` - Production branch, merge-only
+- `api-mvp/base` - Stable base, merge-only
+- `api-mvp/claude` - Integration branch, merge-only
+
+**Always Work In:**
+- Feature worktrees (`./worktree/<feature>-claude`)
+- Feature branches (`api-mvp/feat/<feature>-claude`)
+
+**Merge Path:**
+```
+api-mvp/feat/<feature>-claude
+  → api-mvp/claude
+  → api-mvp/base
+  → main
+  → tagged release
+```
+
+**Isolation Strategy:**
+- Each feature gets its own worktree and branch
+- Features are developed in isolation
+- Merged to integration branch when complete
+- Integration branch merged to stable base regularly
+- Stable base merged to main for releases
+
+#### Worktree Management Commands
+
+```bash
+# List all worktrees
+git worktree list
+
+# Add new feature worktree
+git worktree add ./worktree/<feature>-claude -b api-mvp/feat/<feature>-claude api-mvp/claude
+
+# Remove worktree (after merging)
+git worktree remove ./worktree/<feature>-claude
+
+# Prune stale worktree references
+git worktree prune
+```
+
 #### Key Implementation Order
 1. COMPLETE: Foundation: Sail + PostGIS + Health checks
 2. COMPLETE: Auth: Enhanced User model + Sanctum
