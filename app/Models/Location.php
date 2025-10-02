@@ -28,6 +28,9 @@ class Location extends Model
         'description',
         'latitude',
         'longitude',
+        'osm_id',
+        'osm_type',
+        'osm_data',
         'is_active',
         'is_verified',
         'verification_notes',
@@ -38,6 +41,7 @@ class Location extends Model
         return [
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
+            'osm_data' => 'array',
             'is_active' => 'boolean',
             'is_verified' => 'boolean',
         ];

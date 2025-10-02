@@ -23,6 +23,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *     @OA\Property(property="description", type="string", nullable=true, example="Flagship location in Times Square"),
  *     @OA\Property(property="latitude", type="number", format="float", example=40.7128),
  *     @OA\Property(property="longitude", type="number", format="float", example=-74.0060),
+ *     @OA\Property(property="osm_id", type="integer", nullable=true, description="OpenStreetMap node/way/relation ID", example=123456789),
+ *     @OA\Property(property="osm_type", type="string", nullable=true, enum={"node", "way", "relation"}, description="OpenStreetMap element type", example="node"),
+ *     @OA\Property(property="osm_data", type="object", nullable=true, description="OpenStreetMap tags and metadata", example={"name": "Example Store", "amenity": "restaurant", "addr:street": "Main Street"}),
  *     @OA\Property(property="is_active", type="boolean", example=true),
  *     @OA\Property(property="is_verified", type="boolean", example=true),
  *     @OA\Property(property="created_at", type="string", format="datetime", example="2024-08-26T10:30:00Z"),
@@ -57,6 +60,11 @@ class LocationResource extends JsonResource
             'is_active' => $this->is_active,
             'is_verified' => $this->is_verified,
             'created_at' => $this->created_at,
+
+            // OpenStreetMap integration fields (optional)
+            'osm_id' => $this->whenNotNull($this->osm_id),
+            'osm_type' => $this->whenNotNull($this->osm_type),
+            'osm_data' => $this->whenNotNull($this->osm_data),
 
             // Organization relationship
             'organization' => new OrganizationResource($this->whenLoaded('organization')),

@@ -52,7 +52,7 @@ class LocationTest extends TestCase
             'organization_id', 'name', 'slug', 'address_line_1', 'address_line_2',
             'city', 'state_province', 'postal_code', 'country_code', 'phone',
             'website_url', 'description', 'latitude', 'longitude', 'is_active',
-            'is_verified', 'verification_notes',
+            'is_verified', 'verification_notes', 'osm_id', 'osm_type', 'osm_data',
         ];
 
         $location = new Location;
@@ -496,5 +496,207 @@ class LocationTest extends TestCase
         // Should be findable at new coordinates
         $newNearby = Location::near(40.7580, -73.9855, 1)->get();
         $this->assertTrue($newNearby->contains($location));
+    }
+
+    /**
+     * Test OSM fields are fillable and nullable.
+     */
+    public function test_osm_fields_are_fillable_and_nullable(): void
+    {
+        $osmFields = ['osm_id', 'osm_type', 'osm_data'];
+
+        $location = new Location;
+
+        foreach ($osmFields as $field) {
+            $this->assertContains($field, $location->getFillable());
+        }
+
+        // Test creation without OSM fields (backward compatibility)
+        $locationWithoutOsm = Location::factory()->create([
+            'organization_id' => $this->organization->id,
+        ]);
+
+        $this->assertNull($locationWithoutOsm->osm_id);
+        $this->assertNull($locationWithoutOsm->osm_type);
+        $this->assertNull($locationWithoutOsm->osm_data);
+    }
+
+    /**
+     * Test osm_data correctly casts to/from array.
+     */
+    public function test_osm_data_casting_to_array(): void
+    {
+        $osmData = [
+            'name' => 'Test Restaurant',
+            'amenity' => 'restaurant',
+            'addr:street' => 'Main Street',
+            'addr:housenumber' => '123',
+            'cuisine' => 'italian',
+        ];
+
+        $location = Location::factory()->create([
+            'organization_id' => $this->organization->id,
+            'osm_id' => 123456789,
+            'osm_type' => 'node',
+            'osm_data' => $osmData,
+        ]);
+
+        // Verify osm_data is cast to array
+        $this->assertIsArray($location->osm_data);
+        $this->assertEquals($osmData, $location->osm_data);
+
+        // Verify specific fields
+        $this->assertEquals('Test Restaurant', $location->osm_data['name']);
+        $this->assertEquals('restaurant', $location->osm_data['amenity']);
+        $this->assertEquals('Main Street', $location->osm_data['addr:street']);
+
+        // Reload from database and verify persistence
+        $location->refresh();
+        $this->assertIsArray($location->osm_data);
+        $this->assertEquals($osmData, $location->osm_data);
+    }
+
+    /**
+     * Test location creation with OSM node type.
+     */
+    public function test_location_with_osm_node_type(): void
+    {
+        $location = Location::factory()->osmNode()->create([
+            'organization_id' => $this->organization->id,
+        ]);
+
+        $this->assertNotNull($location->osm_id);
+        $this->assertEquals('node', $location->osm_type);
+        $this->assertIsArray($location->osm_data);
+        $this->assertArrayHasKey('amenity', $location->osm_data);
+        $this->assertArrayHasKey('name', $location->osm_data);
+    }
+
+    /**
+     * Test location creation with OSM way type.
+     */
+    public function test_location_with_osm_way_type(): void
+    {
+        $location = Location::factory()->osmWay()->create([
+            'organization_id' => $this->organization->id,
+        ]);
+
+        $this->assertNotNull($location->osm_id);
+        $this->assertEquals('way', $location->osm_type);
+        $this->assertIsArray($location->osm_data);
+        $this->assertArrayHasKey('amenity', $location->osm_data);
+    }
+
+    /**
+     * Test location creation with OSM relation type.
+     */
+    public function test_location_with_osm_relation_type(): void
+    {
+        $location = Location::factory()->osmRelation()->create([
+            'organization_id' => $this->organization->id,
+        ]);
+
+        $this->assertNotNull($location->osm_id);
+        $this->assertEquals('relation', $location->osm_type);
+        $this->assertIsArray($location->osm_data);
+    }
+
+    /**
+     * Test osm_type enum values are properly constrained.
+     */
+    public function test_osm_type_enum_values(): void
+    {
+        $validTypes = ['node', 'way', 'relation'];
+
+        foreach ($validTypes as $type) {
+            $location = Location::factory()->withOsmData()->create([
+                'organization_id' => $this->organization->id,
+                'osm_type' => $type,
+            ]);
+
+            $this->assertEquals($type, $location->osm_type);
+        }
+    }
+
+    /**
+     * Test osm_data JSON structure validation.
+     */
+    public function test_osm_data_structure_validation(): void
+    {
+        $location = Location::factory()->withOsmData()->create([
+            'organization_id' => $this->organization->id,
+        ]);
+
+        $this->assertIsArray($location->osm_data);
+
+        // OSM data should contain typical OSM tag structure
+        $requiredKeys = ['name', 'amenity'];
+        foreach ($requiredKeys as $key) {
+            $this->assertArrayHasKey($key, $location->osm_data);
+        }
+
+        // Address tags should follow OSM addr:* convention
+        $this->assertArrayHasKey('addr:city', $location->osm_data);
+        $this->assertArrayHasKey('addr:state', $location->osm_data);
+        $this->assertArrayHasKey('addr:postcode', $location->osm_data);
+    }
+
+    /**
+     * Test backward compatibility - locations without OSM data work normally.
+     */
+    public function test_backward_compatibility_without_osm_data(): void
+    {
+        $location = Location::factory()->create([
+            'organization_id' => $this->organization->id,
+            'name' => 'Regular Location',
+            'latitude' => 40.7128,
+            'longitude' => -74.0060,
+        ]);
+
+        // All normal operations should work
+        $this->assertEquals('Regular Location', $location->name);
+        $this->assertEquals(40.7128, $location->latitude);
+        $this->assertNull($location->osm_id);
+        $this->assertNull($location->osm_type);
+        $this->assertNull($location->osm_data);
+
+        // Should be findable by spatial queries
+        $nearby = Location::near(40.7128, -74.0060, 1)->get();
+        $this->assertTrue($nearby->contains($location));
+
+        // Should work with relationships
+        $this->assertInstanceOf(Organization::class, $location->organization);
+    }
+
+    /**
+     * Test updating osm_data preserves structure.
+     */
+    public function test_updating_osm_data_preserves_structure(): void
+    {
+        $initialData = [
+            'name' => 'Initial Name',
+            'amenity' => 'cafe',
+        ];
+
+        $location = Location::factory()->create([
+            'organization_id' => $this->organization->id,
+            'osm_id' => 123456,
+            'osm_type' => 'node',
+            'osm_data' => $initialData,
+        ]);
+
+        // Update osm_data
+        $updatedData = [
+            'name' => 'Updated Name',
+            'amenity' => 'restaurant',
+            'cuisine' => 'italian',
+            'opening_hours' => 'Mo-Su 09:00-22:00',
+        ];
+
+        $location->update(['osm_data' => $updatedData]);
+
+        $this->assertEquals($updatedData, $location->osm_data);
+        $this->assertEquals('Updated Name', $location->osm_data['name']);
+        $this->assertEquals('italian', $location->osm_data['cuisine']);
     }
 }
