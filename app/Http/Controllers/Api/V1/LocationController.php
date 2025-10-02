@@ -140,6 +140,230 @@ class LocationController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/v1/locations/search",
+     *     summary="Unified location search",
+     *     description="Search locations combining WDTP database and optional OpenStreetMap POIs. Performs text-based search with spatial filtering, calculates relevance scores, and returns merged, sorted results from both sources.",
+     *     tags={"Locations"},
+     *
+     *     @OA\Parameter(
+     *         name="q",
+     *         in="query",
+     *         description="Search query (location name or category like 'restaurant', 'cafe', 'retail'). Minimum 2 characters.",
+     *         required=true,
+     *
+     *         @OA\Schema(type="string", minLength=2, example="starbucks")
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="lat",
+     *         in="query",
+     *         description="Center point latitude for spatial search",
+     *         required=true,
+     *
+     *         @OA\Schema(type="number", format="float", minimum=-90, maximum=90, example=40.7128)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="lng",
+     *         in="query",
+     *         description="Center point longitude for spatial search",
+     *         required=true,
+     *
+     *         @OA\Schema(type="number", format="float", minimum=-180, maximum=180, example=-74.0060)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="radius_km",
+     *         in="query",
+     *         description="Search radius in kilometers (0.1-50km, default: 10)",
+     *         required=false,
+     *
+     *         @OA\Schema(type="number", format="float", minimum=0.1, maximum=50, default=10)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="include_osm",
+     *         in="query",
+     *         description="Include OpenStreetMap POIs in results (default: false). When true, queries OSM API for additional locations.",
+     *         required=false,
+     *
+     *         @OA\Schema(type="boolean", default=false)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="min_wage_reports",
+     *         in="query",
+     *         description="Filter WDTP locations with minimum number of wage reports",
+     *         required=false,
+     *
+     *         @OA\Schema(type="integer", minimum=0, example=5)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Results per page (1-500, default: 100)",
+     *         required=false,
+     *
+     *         @OA\Schema(type="integer", minimum=1, maximum=500, default=100)
+     *     ),
+     *
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number for pagination",
+     *         required=false,
+     *
+     *         @OA\Schema(type="integer", minimum=1, default=1)
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful search with merged WDTP and OSM results",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 description="Array of unified location results sorted by relevance score",
+     *
+     *                 @OA\Items(ref="#/components/schemas/UnifiedLocation")
+     *             ),
+     *
+     *             @OA\Property(
+     *                 property="links",
+     *                 type="object",
+     *                 description="Pagination links",
+     *                 @OA\Property(property="first", type="string", example="http://api.wdtp.local/api/v1/locations/search?page=1"),
+     *                 @OA\Property(property="last", type="string", example="http://api.wdtp.local/api/v1/locations/search?page=10"),
+     *                 @OA\Property(property="prev", type="string", nullable=true, example=null),
+     *                 @OA\Property(property="next", type="string", example="http://api.wdtp.local/api/v1/locations/search?page=2")
+     *             ),
+     *             @OA\Property(
+     *                 property="meta",
+     *                 type="object",
+     *                 description="Search metadata and result counts",
+     *                 @OA\Property(property="total", type="integer", description="Total number of results found", example=127),
+     *                 @OA\Property(property="wdtp_count", type="integer", description="Number of WDTP database results", example=23),
+     *                 @OA\Property(property="osm_count", type="integer", description="Number of OpenStreetMap results", example=104),
+     *                 @OA\Property(property="search_query", type="string", description="Original search query", example="starbucks"),
+     *                 @OA\Property(property="search_type", type="string", enum={"name", "category"}, description="Detected search type", example="name"),
+     *                 @OA\Property(
+     *                     property="center",
+     *                     type="object",
+     *                     description="Search center coordinates",
+     *                     @OA\Property(property="lat", type="number", format="float", example=40.7128),
+     *                     @OA\Property(property="lng", type="number", format="float", example=-74.0060)
+     *                 ),
+     *                 @OA\Property(property="radius_km", type="number", format="float", description="Search radius used", example=5.0),
+     *                 @OA\Property(property="osm_unavailable", type="boolean", description="True if OSM query failed", example=false),
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="per_page", type="integer", example=100),
+     *                 @OA\Property(property="last_page", type="integer", example=2)
+     *             ),
+     *             example={
+     *                 "data": {
+     *                     {
+     *                         "source": "wdtp",
+     *                         "location_id": 42,
+     *                         "osm_id": null,
+     *                         "osm_type": null,
+     *                         "name": "Starbucks - Times Square",
+     *                         "latitude": 40.7580,
+     *                         "longitude": -73.9855,
+     *                         "has_wage_data": true,
+     *                         "wage_reports_count": 12,
+     *                         "address": "1556 Broadway, New York, NY 10036",
+     *                         "organization": {
+     *                             "id": 5,
+     *                             "name": "Starbucks Corporation",
+     *                             "industry_id": 1
+     *                         },
+     *                         "distance_meters": 245.8,
+     *                         "relevance_score": 0.92
+     *                     },
+     *                     {
+     *                         "source": "osm",
+     *                         "location_id": null,
+     *                         "osm_id": "node/123456789",
+     *                         "osm_type": "node",
+     *                         "name": "Starbucks",
+     *                         "latitude": 40.7548,
+     *                         "longitude": -73.9872,
+     *                         "has_wage_data": false,
+     *                         "wage_reports_count": 0,
+     *                         "address": "Broadway, New York",
+     *                         "organization": null,
+     *                         "distance_meters": 412.3,
+     *                         "relevance_score": 0.85
+     *                     }
+     *                 },
+     *                 "links": {
+     *                     "first": "http://api.wdtp.local/api/v1/locations/search?page=1",
+     *                     "last": "http://api.wdtp.local/api/v1/locations/search?page=2",
+     *                     "prev": null,
+     *                     "next": "http://api.wdtp.local/api/v1/locations/search?page=2"
+     *                 },
+     *                 "meta": {
+     *                     "total": 127,
+     *                     "wdtp_count": 23,
+     *                     "osm_count": 104,
+     *                     "search_query": "starbucks",
+     *                     "search_type": "name",
+     *                     "center": {"lat": 40.7128, "lng": -74.0060},
+     *                     "radius_km": 5.0,
+     *                     "osm_unavailable": false,
+     *                     "current_page": 1,
+     *                     "per_page": 100,
+     *                     "last_page": 2
+     *                 }
+     *             }
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error - invalid parameters",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="q",
+     *                     type="array",
+     *
+     *                     @OA\Items(type="string", example="The q field must be at least 2 characters.")
+     *                 ),
+     *
+     *                 @OA\Property(
+     *                     property="lat",
+     *                     type="array",
+     *
+     *                     @OA\Items(type="string", example="The lat field must be between -90 and 90.")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error - WDTP query failed",
+     *
+     *         @OA\JsonContent(
+     *             type="object",
+     *
+     *             @OA\Property(property="message", type="string", example="Server error occurred during location search")
+     *         )
+     *     )
+     * )
+     *
      * Search locations with text and spatial filtering (unified WDTP + OSM).
      *
      * Queries both WDTP database locations and OpenStreetMap POIs,
