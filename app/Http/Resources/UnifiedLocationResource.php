@@ -12,6 +12,32 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * Provides a consistent API response format regardless of the location source.
  * Handles both Location models (WDTP) and OsmLocation DTOs (OSM) using instanceof checks.
+ *
+ * @OA\Schema(
+ *     schema="UnifiedLocation",
+ *     type="object",
+ *     title="Unified Location",
+ *     description="Unified location data from either WDTP database or OpenStreetMap",
+ *
+ *     @OA\Property(property="source", type="string", enum={"wdtp", "osm"}, description="Location data source", example="wdtp"),
+ *     @OA\Property(property="location_id", type="integer", nullable=true, description="WDTP location ID (null for OSM locations)", example=42),
+ *     @OA\Property(property="osm_id", type="string", nullable=true, description="OpenStreetMap ID in format 'node/123' or 'way/456' (null for WDTP locations)", example="node/123456789"),
+ *     @OA\Property(property="osm_type", type="string", nullable=true, enum={"node", "way"}, description="OpenStreetMap element type (null for WDTP locations)", example="node"),
+ *     @OA\Property(property="name", type="string", description="Location name", example="Starbucks - Times Square"),
+ *     @OA\Property(property="latitude", type="number", format="float", description="Location latitude", example=40.7580),
+ *     @OA\Property(property="longitude", type="number", format="float", description="Location longitude", example=-73.9855),
+ *     @OA\Property(property="has_wage_data", type="boolean", description="Whether location has wage reports (always false for OSM)", example=true),
+ *     @OA\Property(property="wage_reports_count", type="integer", description="Number of wage reports (always 0 for OSM)", example=12),
+ *     @OA\Property(property="address", type="string", description="Formatted address", example="1556 Broadway, New York, NY 10036"),
+ *     @OA\Property(
+ *         property="organization",
+ *         ref="#/components/schemas/Organization",
+ *         nullable=true,
+ *         description="Associated organization (null for OSM locations)"
+ *     ),
+ *     @OA\Property(property="distance_meters", type="number", format="float", nullable=true, description="Distance from search center in meters", example=245.8),
+ *     @OA\Property(property="relevance_score", type="number", format="float", nullable=true, description="Search relevance score (0-1)", example=0.92)
+ * )
  */
 class UnifiedLocationResource extends JsonResource
 {
