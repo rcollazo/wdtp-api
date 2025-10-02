@@ -14,7 +14,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_query_parameter_is_missing(): void
     {
-        $response = $this->getJson($this->endpoint . '?lat=40.7128&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?lat=40.7128&lng=-74.0060');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['q']);
@@ -26,7 +26,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_latitude_is_missing(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lng=-74.0060');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['lat']);
@@ -38,7 +38,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_longitude_is_missing(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['lng']);
@@ -50,7 +50,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_latitude_is_out_of_range_too_low(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=-91&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=-91&lng=-74.0060');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['lat']);
@@ -62,7 +62,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_latitude_is_out_of_range_too_high(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=91&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=91&lng=-74.0060');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['lat']);
@@ -74,7 +74,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_longitude_is_out_of_range_too_low(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-181');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-181');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['lng']);
@@ -86,7 +86,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_longitude_is_out_of_range_too_high(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=181');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=181');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['lng']);
@@ -98,7 +98,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_radius_km_is_too_small(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=0.05');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=0.05');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['radius_km']);
@@ -110,7 +110,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_radius_km_is_too_large(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=51');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=51');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['radius_km']);
@@ -122,7 +122,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_per_page_is_too_large(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&per_page=501');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&per_page=501');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['per_page']);
@@ -134,7 +134,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_per_page_is_too_small(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&per_page=0');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&per_page=0');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['per_page']);
@@ -146,7 +146,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_422_when_query_is_too_short(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=M&lat=40.7128&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?q=M&lat=40.7128&lng=-74.0060');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['q']);
@@ -158,7 +158,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_returns_200_with_valid_parameters(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060');
 
         // Should not return validation errors
         $response->assertStatus(200);
@@ -172,7 +172,7 @@ class LocationSearchValidationTest extends TestCase
     public function it_validates_multiple_errors_in_single_request(): void
     {
         // Missing q, invalid lat, invalid lng
-        $response = $this->getJson($this->endpoint . '?lat=100&lng=200');
+        $response = $this->getJson($this->endpoint.'?lat=100&lng=200');
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['q', 'lat', 'lng']);
@@ -181,7 +181,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_validates_edge_case_latitude_minimum(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=-90&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=-90&lng=-74.0060');
 
         $response->assertStatus(200); // -90 is valid (exact boundary)
     }
@@ -189,7 +189,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_validates_edge_case_latitude_maximum(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=90&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=90&lng=-74.0060');
 
         $response->assertStatus(200); // 90 is valid (exact boundary)
     }
@@ -197,7 +197,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_validates_edge_case_longitude_minimum(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-180');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-180');
 
         $response->assertStatus(200); // -180 is valid (exact boundary)
     }
@@ -205,7 +205,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_validates_edge_case_longitude_maximum(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=180');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=180');
 
         $response->assertStatus(200); // 180 is valid (exact boundary)
     }
@@ -213,7 +213,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_validates_edge_case_radius_minimum(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=0.1');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=0.1');
 
         $response->assertStatus(200); // 0.1 is valid (exact minimum)
     }
@@ -221,7 +221,7 @@ class LocationSearchValidationTest extends TestCase
     /** @test */
     public function it_validates_edge_case_radius_maximum(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=50');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=50');
 
         $response->assertStatus(200); // 50 is valid (exact maximum)
     }

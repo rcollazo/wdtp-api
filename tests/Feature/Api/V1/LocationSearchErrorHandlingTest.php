@@ -7,7 +7,6 @@ use App\Models\Location;
 use App\Models\Organization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -51,7 +50,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             },
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
 
         // Should still return 200 with WDTP results (graceful degradation)
         $response->assertStatus(200);
@@ -81,7 +80,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             '*' => Http::response(['error' => 'Service unavailable'], 503),
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Starbucks&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $response = $this->getJson($this->endpoint.'?q=Starbucks&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
 
         // Graceful degradation: return WDTP results with osm_unavailable flag
         $response->assertStatus(200);
@@ -111,7 +110,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             },
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
 
         $response->assertStatus(200);
         $response->assertJsonPath('meta.osm_unavailable', true);
@@ -120,7 +119,7 @@ class LocationSearchErrorHandlingTest extends TestCase
     /** @test */
     public function it_returns_422_for_validation_errors(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=T&lat=40.7128&lng=-74.0060'); // Query too short
+        $response = $this->getJson($this->endpoint.'?q=T&lat=40.7128&lng=-74.0060'); // Query too short
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['q']);
@@ -139,7 +138,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             },
         ]);
 
-        $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
     }
 
     /** @test */
@@ -153,7 +152,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             '*' => Http::response(['error' => 'Service unavailable'], 503),
         ]);
 
-        $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
     }
 
     /** @test */
@@ -169,7 +168,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             },
         ]);
 
-        $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
     }
 
     /** @test */
@@ -194,7 +193,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             },
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
 
         // Should NEVER return 500 for OSM errors
         $response->assertStatus(200);
@@ -221,7 +220,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             '*' => Http::response(['error' => 'Service unavailable'], 503),
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -250,7 +249,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             '*' => Http::response(['elements' => []], 200),
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
 
         $response->assertStatus(200);
         $response->assertJsonMissingPath('meta.osm_unavailable');
@@ -262,7 +261,7 @@ class LocationSearchErrorHandlingTest extends TestCase
         // Simulate database error by using invalid table name
         // This is a theoretical test - in reality, WDTP errors should NOT be gracefully degraded
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
 
         // WDTP is core functionality - errors should propagate
         // But if WDTP succeeds, we still get 200
@@ -287,7 +286,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
@@ -316,7 +315,7 @@ class LocationSearchErrorHandlingTest extends TestCase
             '*' => Http::response(['error' => 'Rate limit exceeded'], 429),
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&include_osm=true');
 
         // Graceful degradation for rate limiting
         $response->assertStatus(200);

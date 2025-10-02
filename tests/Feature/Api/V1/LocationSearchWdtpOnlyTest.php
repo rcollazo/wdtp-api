@@ -6,7 +6,6 @@ use App\Models\Industry;
 use App\Models\Location;
 use App\Models\Organization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class LocationSearchWdtpOnlyTest extends TestCase
@@ -39,7 +38,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
@@ -72,7 +71,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Location&lat=40.7128&lng=-74.0060&radius_km=5');
+        $response = $this->getJson($this->endpoint.'?q=Location&lat=40.7128&lng=-74.0060&radius_km=5');
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
@@ -96,7 +95,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -137,7 +136,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=15');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=15');
 
         $response->assertStatus(200);
         $response->assertJsonCount(2, 'data');
@@ -167,7 +166,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             ]);
         }
 
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=10&per_page=10');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=10&per_page=10');
 
         $response->assertStatus(200);
         $response->assertJsonCount(10, 'data');
@@ -192,7 +191,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&per_page=2&page=2');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10&per_page=2&page=2');
 
         $response->assertStatus(200);
         $response->assertJsonPath('meta.current_page', 2);
@@ -215,7 +214,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonStructure([
@@ -264,7 +263,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=5');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=5');
 
         $response->assertStatus(200);
         $response->assertJsonPath('meta.search_query', 'Test');
@@ -292,7 +291,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonFragment(['name' => 'McDonald\'s Corporation']);
@@ -308,7 +307,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
     /** @test */
     public function it_returns_empty_result_set_when_no_matches(): void
     {
-        $response = $this->getJson($this->endpoint . '?q=NonexistentLocation&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=NonexistentLocation&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonCount(0, 'data');
@@ -340,7 +339,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Starbucks&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Starbucks&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
@@ -364,7 +363,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Starbucks Times&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Starbucks Times&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
@@ -395,7 +394,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'inactive',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Location&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Location&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
@@ -419,7 +418,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $data = $response->json('data');
@@ -447,7 +446,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Broadway&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Broadway&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
@@ -470,7 +469,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Manhattan&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=Manhattan&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $response->assertJsonCount(1, 'data');
@@ -492,7 +491,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=10');
+        $response = $this->getJson($this->endpoint.'?q=McDonald&lat=40.7128&lng=-74.0060&radius_km=10');
 
         $response->assertStatus(200);
         $data = $response->json('data');
@@ -521,7 +520,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
             'status' => 'active',
         ]);
 
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060');
 
         $response->assertStatus(200);
         $response->assertJsonPath('meta.radius_km', 10); // Default is 10km
@@ -547,7 +546,7 @@ class LocationSearchWdtpOnlyTest extends TestCase
         }
 
         $startTime = microtime(true);
-        $response = $this->getJson($this->endpoint . '?q=Test&lat=40.7128&lng=-74.0060&radius_km=50');
+        $response = $this->getJson($this->endpoint.'?q=Test&lat=40.7128&lng=-74.0060&radius_km=50');
         $endTime = microtime(true);
 
         $response->assertStatus(200);
