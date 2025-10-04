@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\DataTransferObjects\OsmLocation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LocationIndexRequest;
 use App\Http\Requests\LocationSearchRequest;
@@ -398,7 +399,7 @@ class LocationController extends Controller
         }
 
         // Get WDTP results and limit to prevent OOM
-        $wdtpResults = $query->get()->take(1000);
+        $wdtpResults = collect($query->get()->take(1000)->all());
 
         // Calculate relevance score for each WDTP location
         foreach ($wdtpResults as $location) {
@@ -414,24 +415,20 @@ class LocationController extends Controller
             try {
                 // Query OSM POIs and limit to prevent OOM
                 $osmResults = $this->overpassService->search($searchQuery, $lat, $lng, $radiusKm)
-                    ->take(1000);
-
-                // Calculate distance and relevance for each OSM result
-                foreach ($osmResults as $osmLocation) {
-                    // Calculate distance using Haversine formula (distance already set by service)
-                    // Distance is already calculated in OverpassService, just verify it exists
-                    if ($osmLocation->distance_meters === null) {
-                        $osmLocation->distance_meters = $this->calculateHaversineDistance(
+                    ->take(1000)
+                    ->map(function (OsmLocation $osmLocation) use ($lat, $lng, $radiusKm) {
+                        $distance = $osmLocation->distance_meters ?? $this->calculateHaversineDistance(
                             $lat,
                             $lng,
                             $osmLocation->latitude,
                             $osmLocation->longitude
                         );
-                    }
 
-                    // Calculate relevance score
-                    $osmLocation->relevance_score = $this->relevanceScorer->calculate($osmLocation, $radiusKm);
-                }
+                        $withDistance = $osmLocation->withDistance($distance);
+                        $relevance = $this->relevanceScorer->calculate($withDistance, $radiusKm);
+
+                        return $withDistance->withRelevance($relevance);
+                    })->values();
             } catch (\Exception $e) {
                 // Log OSM failure but continue with WDTP results (graceful degradation)
                 Log::warning('OSM search failed - continuing with WDTP results only', [

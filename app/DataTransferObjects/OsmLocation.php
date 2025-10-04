@@ -46,6 +46,48 @@ readonly class OsmLocation
     }
 
     /**
+     * Return a new instance with the provided distance in meters.
+     *
+     * DTO promotes read-only state; cloning ensures immutable semantics while
+     * still letting callers derive enriched variants for scoring and sorting.
+     */
+    public function withDistance(float $distanceMeters): self
+    {
+        return new self(
+            osm_id: $this->osm_id,
+            osm_type: $this->osm_type,
+            name: $this->name,
+            latitude: $this->latitude,
+            longitude: $this->longitude,
+            tags: $this->tags,
+            distance_meters: $distanceMeters,
+            relevance_score: $this->relevance_score,
+            text_rank: $this->text_rank,
+        );
+    }
+
+    /**
+     * Return a new instance with the provided relevance score.
+     *
+     * Maintains immutability while allowing downstream layers to attach computed
+     * relevance without mutating the original Overpass payload.
+     */
+    public function withRelevance(float $relevanceScore): self
+    {
+        return new self(
+            osm_id: $this->osm_id,
+            osm_type: $this->osm_type,
+            name: $this->name,
+            latitude: $this->latitude,
+            longitude: $this->longitude,
+            tags: $this->tags,
+            distance_meters: $this->distance_meters,
+            relevance_score: $relevanceScore,
+            text_rank: $this->text_rank,
+        );
+    }
+
+    /**
      * Format address from OSM tags.
      *
      * Extracts address components from OSM tags following the addr:* namespace

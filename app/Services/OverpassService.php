@@ -57,6 +57,7 @@ class OverpassService
 
         // Execute HTTP request with timeout
         $response = Http::timeout(config('services.overpass.timeout'))
+            ->asForm()
             ->post(config('services.overpass.base_url'), [
                 'data' => $overpassQuery,
             ]);
