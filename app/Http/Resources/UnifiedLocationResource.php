@@ -29,6 +29,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *     @OA\Property(property="has_wage_data", type="boolean", description="Whether location has wage reports (always false for OSM)", example=true),
  *     @OA\Property(property="wage_reports_count", type="integer", description="Number of wage reports (always 0 for OSM)", example=12),
  *     @OA\Property(property="address", type="string", description="Formatted address", example="1556 Broadway, New York, NY 10036"),
+ *     @OA\Property(property="tags", type="object", nullable=true, description="Raw OpenStreetMap tags (null for WDTP locations)", example={"amenity": "restaurant", "cuisine": "pizza"}),
  *     @OA\Property(
  *         property="organization",
  *         ref="#/components/schemas/Organization",
@@ -76,6 +77,9 @@ class UnifiedLocationResource extends JsonResource
             'address' => $isWdtpLocation
                 ? $this->full_address
                 : ($this->formatAddress() ?? ''),
+
+            // Raw OSM tags
+            'tags' => $this->when($isOsmLocation, $this->tags),
 
             // Relationships (WDTP only)
             'organization' => $isWdtpLocation

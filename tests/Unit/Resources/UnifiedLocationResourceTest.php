@@ -39,6 +39,7 @@ class UnifiedLocationResourceTest extends TestCase
         $this->assertEquals($location->longitude, $array['longitude']);
         $this->assertNotNull($array['organization']);
         $this->assertEquals($organization->name, $array['organization']->name);
+        $this->assertArrayNotHasKey('tags', $array);
     }
 
     /** @test */
@@ -58,6 +59,7 @@ class UnifiedLocationResourceTest extends TestCase
         $this->assertNull($array['osm_type']);
         $this->assertEquals('Independent Coffee Shop', $array['name']);
         $this->assertNull($array['organization']);
+        $this->assertArrayNotHasKey('tags', $array);
     }
 
     /** @test */
@@ -91,6 +93,7 @@ class UnifiedLocationResourceTest extends TestCase
         $this->assertEquals(-73.9855, $array['longitude']);
         $this->assertStringContainsString('Broadway', $array['address']);
         $this->assertStringContainsString('New York', $array['address']);
+        $this->assertEquals($osmLocation->tags, $array['tags']);
     }
 
     /** @test */
@@ -115,6 +118,7 @@ class UnifiedLocationResourceTest extends TestCase
         $this->assertEquals('way/789012', $array['osm_id']);
         $this->assertEquals('way', $array['osm_type']);
         $this->assertStringContainsString('New York', $array['address']);
+        $this->assertEquals($osmLocation->tags, $array['tags']);
     }
 
     /** @test */

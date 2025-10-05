@@ -168,6 +168,31 @@ class UnifiedLocationSearchTest extends TestCase
         $sources = collect($data['data'])->pluck('source')->unique();
         $this->assertContains('wdtp', $sources->toArray());
         $this->assertContains('osm', $sources->toArray());
+
+        // Verify OSM entries include raw tags from Overpass
+        $osmEntries = collect($data['data'])->where('source', 'osm');
+        $this->assertNotEmpty($osmEntries);
+
+        $expectedTags = [
+            'node/123456' => [
+                'name' => "Joe's Pizza",
+                'amenity' => 'restaurant',
+                'cuisine' => 'pizza',
+                'addr:street' => 'Main Street',
+                'addr:city' => 'New York',
+            ],
+            'way/789012' => [
+                'name' => "Tony's Pizza",
+                'amenity' => 'restaurant',
+                'addr:street' => 'Broadway',
+            ],
+        ];
+
+        $osmEntries->each(function (array $entry) use ($expectedTags): void {
+            $this->assertArrayHasKey('tags', $entry);
+            $this->assertArrayHasKey($entry['osm_id'], $expectedTags);
+            $this->assertEquals($expectedTags[$entry['osm_id']], $entry['tags']);
+        });
     }
 
     /**
@@ -386,6 +411,11 @@ class UnifiedLocationSearchTest extends TestCase
         $this->assertNull($osmResult['organization']);
         $this->assertFalse($osmResult['has_wage_data']);
         $this->assertEquals(0, $osmResult['wage_reports_count']);
+        $this->assertEquals([
+            'name' => 'Test Pizza',
+            'addr:street' => 'Main St',
+            'addr:city' => 'NYC',
+        ], $osmResult['tags']);
     }
 
     /**
@@ -475,6 +505,15 @@ class UnifiedLocationSearchTest extends TestCase
         $this->assertNotNull($osmResult);
         $this->assertEquals('Amazing Pizza Shop', $osmResult['name']);
         $this->assertStringContainsString('Pizza Boulevard', $osmResult['address']);
+        $this->assertEquals([
+            'name' => 'Amazing Pizza Shop',
+            'amenity' => 'restaurant',
+            'cuisine' => 'pizza',
+            'addr:housenumber' => '789',
+            'addr:street' => 'Pizza Boulevard',
+            'addr:city' => 'New York',
+            'addr:postcode' => '10002',
+        ], $osmResult['tags']);
     }
 
     /**
