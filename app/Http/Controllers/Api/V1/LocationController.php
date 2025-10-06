@@ -398,8 +398,9 @@ class LocationController extends Controller
             });
         }
 
-        // Get WDTP results and limit to prevent OOM
-        $wdtpResults = collect($query->get()->take(1000)->all());
+        // Get WDTP results with SQL-level limit to prevent OOM
+        $wdtpResults = $query->limit(1000)->get();
+        $wdtpCount = $wdtpResults->count();
 
         // Calculate relevance score for each WDTP location
         foreach ($wdtpResults as $location) {
@@ -443,7 +444,7 @@ class LocationController extends Controller
         }
 
         // Merge WDTP and OSM results
-        $merged = $wdtpResults->merge($osmResults);
+        $merged = $wdtpResults->toBase()->merge($osmResults);
 
         // Sort merged results by relevance score descending
         $sorted = $merged->sortByDesc('relevance_score')->values();
@@ -461,7 +462,7 @@ class LocationController extends Controller
         // Build comprehensive meta object
         $meta = [
             'total' => $sorted->count(),
-            'wdtp_count' => $wdtpResults->count(),
+            'wdtp_count' => $wdtpCount,
             'osm_count' => $osmResults->count(),
             'search_query' => $searchQuery,
             'search_type' => $this->detectSearchType($searchQuery),
